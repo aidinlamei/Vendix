@@ -50,5 +50,14 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
 
         builder.Property(b => b.ModifiedBy)
             .HasMaxLength(100);
+
+        // Soft Delete
+        builder.Property(b => b.IsDeleted)
+            .HasDefaultValue(false);
+
+        builder.Property(b => b.DeletedBy)
+            .HasMaxLength(100);
+
+        builder.HasQueryFilter(b => !b.IsDeleted);
     }
 }

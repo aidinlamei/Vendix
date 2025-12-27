@@ -7,10 +7,11 @@ namespace Vendix.Domain.Catalog.Entities;
 /// Represents a brand or manufacturer of products.
 /// </summary>
 /// <remarks>
-/// Brand is an entity (not an aggregate root) that groups products by manufacturer.
-/// It implements IAuditableEntity for tracking creation and modification.
+/// Brand is an aggregate root that groups products by manufacturer.
+/// It implements IAuditableEntity for tracking creation and modification,
+/// and ISoftDelete for soft deletion support.
 /// </remarks>
-public class Brand : BaseEntity, IAuditableEntity
+public class Brand : AggregateRoot, IAuditableEntity, ISoftDelete
 {
     /// <summary>
     /// Gets the brand name.
@@ -46,6 +47,21 @@ public class Brand : BaseEntity, IAuditableEntity
     /// Gets or sets the identifier of the user who last modified this entity.
     /// </summary>
     public string? ModifiedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this entity has been soft deleted.
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date and time when this entity was soft deleted.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the user who deleted this entity.
+    /// </summary>
+    public string? DeletedBy { get; set; }
 
     /// <summary>
     /// Required by EF Core for materialization.

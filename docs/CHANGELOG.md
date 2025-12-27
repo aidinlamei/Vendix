@@ -6,6 +6,88 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 1 Fixes and Completions (Date: 2025-12-27)
+
+**Fixed:**
+
+Critical Fixes:
+- `Toast.razor` - Added `@implements IDisposable` directive after comment block for proper timer cleanup
+- `LoadingSpinner.razor` - Changed invalid `border-3` to `border-2` in medium spinner size (border-3 doesn't exist in Tailwind CSS)
+- `CategoryConfiguration.cs` - Changed parent category relationship from `DeleteBehavior.Restrict` to `DeleteBehavior.SetNull` to properly handle category deletion
+
+**Added:**
+
+Domain Layer:
+- `IBrandRepository.cs` - Repository interface for Brand aggregate with GetBySlugAsync and GetAllAsync methods
+- Updated `Brand.cs` to extend AggregateRoot (was BaseEntity) to support repository pattern
+- Added ISoftDelete interface to Brand entity (IsDeleted, DeletedAt, DeletedBy properties)
+
+Infrastructure Layer - Repositories (src/Vendix.Infrastructure/Persistence/Repositories/):
+- `ProductRepository.cs` - Full implementation of IProductRepository with:
+  - GetByIdAsync, GetBySlugAsync with eager loading of Variants, Specifications, Images, Translations
+  - GetByCategoryAsync for filtering products by category
+  - SearchAsync with support for search term, category, brand, and price range filters
+  - CRUD operations (AddAsync, Update, Delete)
+
+- `CategoryRepository.cs` - Full implementation of ICategoryRepository with:
+  - GetByIdAsync, GetBySlugAsync with Translations eager loading
+  - GetRootCategoriesAsync for top-level categories
+  - GetWithChildrenAsync with nested subcategory loading
+  - CRUD operations (AddAsync, Update, Delete)
+
+- `BrandRepository.cs` - Full implementation of IBrandRepository with:
+  - GetByIdAsync, GetBySlugAsync
+  - GetAllAsync for retrieving all brands
+  - CRUD operations (AddAsync, Update, Delete)
+
+Infrastructure Layer - Configuration Updates:
+- `BrandConfiguration.cs` - Added soft delete properties configuration (IsDeleted default, DeletedBy max length, query filter)
+- `DependencyInjection.cs` - Registered all repository implementations (IProductRepository, ICategoryRepository, IBrandRepository)
+
+Application Layer:
+- `DependencyInjection.cs` - Extension method to register application services:
+  - MediatR with assembly scanning
+  - FluentValidation validators from assembly
+  - Mapster TypeAdapterConfig and ServiceMapper
+
+Tests (tests/Vendix.Domain.Tests/Catalog/):
+- `SkuTests.cs` - Comprehensive tests for SKU value object:
+  - Valid SKU creation and uppercase normalization
+  - Invalid format rejection (empty, too short, too long, invalid chars)
+  - Min/max length boundary tests
+  - IsValid static method tests
+  - Equality and hash code tests
+
+- `SlugTests.cs` - Comprehensive tests for Slug value object:
+  - Valid slug creation and lowercase normalization
+  - FromText generation from various inputs
+  - Invalid format rejection (consecutive hyphens, start/end hyphen, invalid chars)
+  - Min/max length boundary tests
+  - IsValid static method tests
+  - Equality and hash code tests
+
+- `CategoryTests.cs` - Comprehensive tests for Category aggregate:
+  - Category creation with and without parent
+  - Name and slug updates
+  - Self-parent validation
+  - Translation add/remove/get operations
+  - GetName with language fallback
+  - IAuditableEntity and ISoftDelete implementation
+
+**Technical Decisions:**
+- Brand promoted from BaseEntity to AggregateRoot to support repository pattern (IRepository requires AggregateRoot)
+- All read-only repository methods use AsNoTracking() for better query performance
+- Repository implementations use constructor injection for VendixDbContext
+- Product searches use case-insensitive matching via ToLower()
+- Category hierarchy loaded with ThenInclude for subcategory translations
+- Tests follow existing patterns with FluentAssertions and Theory/InlineData for parameterized tests
+
+**Next Steps:**
+- Step 1.6: Set up unit test project structure (completed)
+- Step 2.1: Implement Product CRUD with Application layer
+
+---
+
 ### Step 1.5 - Blazor Layout Components (Date: 2025-12-27)
 
 **Added:**
