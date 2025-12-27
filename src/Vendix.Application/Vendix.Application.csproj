@@ -6,6 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.*" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.*" />
+    <PackageReference Include="Mapster" Version="7.*" />
+    <PackageReference Include="Mapster.DependencyInjection" Version="1.*" />
+    <PackageReference Include="MediatR" Version="12.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Vendix.Domain\Vendix.Domain.csproj" />
   </ItemGroup>
 

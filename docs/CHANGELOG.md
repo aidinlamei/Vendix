@@ -6,6 +6,65 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Step 1.4 - Infrastructure Layer (Date: 2025-12-27)
+
+**Added:**
+
+NuGet Packages - Infrastructure:
+- Microsoft.EntityFrameworkCore (10.*)
+- Microsoft.EntityFrameworkCore.Design (10.*)
+- Npgsql.EntityFrameworkCore.PostgreSQL (10.*)
+
+NuGet Packages - Application:
+- MediatR (12.*)
+- FluentValidation (11.*)
+- FluentValidation.DependencyInjectionExtensions (11.*)
+- Mapster (7.*)
+- Mapster.DependencyInjection (1.*)
+
+Application Interfaces:
+- `IUnitOfWork.cs` - Unit of work pattern for atomic persistence
+- `IDateTimeProvider.cs` - Abstraction for testable date/time access
+
+Persistence:
+- `VendixDbContext.cs` - Main DbContext with DbSets for all Catalog entities
+- `UnitOfWork.cs` - Implementation wrapping DbContext.SaveChangesAsync
+
+EF Core Configurations:
+- `ProductConfiguration.cs` - Product, ProductVariant, ProductSpecification, ProductImage, ProductTranslation
+- `CategoryConfiguration.cs` - Category, CategoryTranslation
+- `BrandConfiguration.cs` - Brand entity configuration
+
+Value Object Conversions:
+- Money → stored as two columns (Price, PriceCurrency) using OwnsOne
+- Sku → stored as string with HasConversion
+- Slug → stored as string with HasConversion
+
+Interceptors:
+- `AuditableEntityInterceptor.cs` - Auto-sets CreatedAt, ModifiedAt, DeletedAt
+
+Services:
+- `DateTimeProvider.cs` - Production implementation of IDateTimeProvider
+
+DI Configuration:
+- `DependencyInjection.cs` - Extension method to register all infrastructure services
+
+**Technical Decisions:**
+- Used owned entities (OwnsOne) for Money value object to store Amount and Currency in separate columns
+- Used HasConversion for Sku and Slug value objects (single column storage)
+- Applied query filters for soft delete on Product and Category aggregates
+- Created unique indexes on Slug fields for all entities
+- Used Restrict delete behavior for Category hierarchy to prevent orphaned subcategories
+- Used Cascade delete for child entities within aggregates
+- Configured Npgsql retry on failure (3 retries, 30s max delay)
+- AuditableEntityInterceptor handles both sync and async SaveChanges
+
+**Next Steps:**
+- Step 1.5: Create repository implementations
+- Step 1.6: Set up initial migrations
+
+---
+
 ### Step 1.3 - Catalog Domain Entities (Date: 2025-12-27)
 
 **Added:**
