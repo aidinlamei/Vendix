@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Vendix.Domain</RootNamespace>
+    <AssemblyName>Vendix.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>

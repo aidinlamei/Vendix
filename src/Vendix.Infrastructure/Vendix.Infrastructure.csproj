@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Vendix.Infrastructure</RootNamespace>
+    <AssemblyName>Vendix.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vendix.Application\Vendix.Application.csproj" />
+  </ItemGroup>
+
+</Project>
