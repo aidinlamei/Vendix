@@ -17,14 +17,19 @@ namespace Vendix.Infrastructure.Persistence.Interceptors;
 public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
 {
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ICurrentUserService? _currentUserService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AuditableEntityInterceptor"/> class.
     /// </summary>
     /// <param name="dateTimeProvider">The date time provider for getting current UTC time.</param>
-    public AuditableEntityInterceptor(IDateTimeProvider dateTimeProvider)
+    /// <param name="currentUserService">The current user service for getting user information (optional).</param>
+    public AuditableEntityInterceptor(
+        IDateTimeProvider dateTimeProvider,
+        ICurrentUserService? currentUserService = null)
     {
         _dateTimeProvider = dateTimeProvider;
+        _currentUserService = currentUserService;
     }
 
     /// <inheritdoc />
@@ -54,6 +59,7 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
         }
 
         var utcNow = _dateTimeProvider.UtcNow;
+        var userId = _currentUserService?.UserId;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditableEntity>())
         {
@@ -61,14 +67,12 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
             {
                 case EntityState.Added:
                     entry.Entity.CreatedAt = utcNow;
-                    // CreatedBy would be set here if we had ICurrentUserService
-                    // entry.Entity.CreatedBy = _currentUserService.UserId;
+                    entry.Entity.CreatedBy = userId;
                     break;
 
                 case EntityState.Modified:
                     entry.Entity.ModifiedAt = utcNow;
-                    // ModifiedBy would be set here if we had ICurrentUserService
-                    // entry.Entity.ModifiedBy = _currentUserService.UserId;
+                    entry.Entity.ModifiedBy = userId;
                     break;
             }
         }
@@ -82,8 +86,7 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
                 if (!originalIsDeleted)
                 {
                     entry.Entity.DeletedAt = utcNow;
-                    // DeletedBy would be set here if we had ICurrentUserService
-                    // entry.Entity.DeletedBy = _currentUserService.UserId;
+                    entry.Entity.DeletedBy = userId;
                 }
             }
         }

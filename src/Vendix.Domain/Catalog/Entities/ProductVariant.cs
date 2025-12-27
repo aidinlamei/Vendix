@@ -28,13 +28,18 @@ public class ProductVariant : BaseEntity
     public string Name { get; private set; } = null!;
 
     /// <summary>
-    /// Gets the price adjustment for this variant relative to the base product price.
+    /// Gets the price adjustment amount for this variant relative to the base product price.
     /// </summary>
     /// <remarks>
-    /// This can be positive (variant costs more) or zero.
-    /// The final price is calculated as: Product.Price + Variant.PriceAdjustment
+    /// This can be positive (variant costs more), negative (discount), or zero.
+    /// The final price is calculated as: Product.Price + Variant.PriceAdjustmentAmount
     /// </remarks>
-    public Money PriceAdjustment { get; private set; } = null!;
+    public decimal PriceAdjustmentAmount { get; private set; }
+
+    /// <summary>
+    /// Gets the currency code for the price adjustment (e.g., "USD", "EUR").
+    /// </summary>
+    public string PriceAdjustmentCurrency { get; private set; } = null!;
 
     /// <summary>
     /// Gets the current stock quantity for this variant.
@@ -57,15 +62,17 @@ public class ProductVariant : BaseEntity
     /// <param name="productId">The ID of the parent product.</param>
     /// <param name="sku">The Stock Keeping Unit for this variant.</param>
     /// <param name="name">The variant name.</param>
-    /// <param name="priceAdjustment">The price adjustment relative to the base price.</param>
+    /// <param name="priceAdjustmentAmount">The price adjustment amount (can be negative for discounts).</param>
+    /// <param name="priceAdjustmentCurrency">The currency code for the price adjustment.</param>
     /// <param name="stockQuantity">The initial stock quantity. Must be non-negative.</param>
-    /// <exception cref="ArgumentException">Thrown when name is null/whitespace or stockQuantity is negative.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when sku or priceAdjustment is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when name is null/whitespace, currency is invalid, or stockQuantity is negative.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when sku is null.</exception>
     public ProductVariant(
         Guid productId,
         Sku sku,
         string name,
-        Money priceAdjustment,
+        decimal priceAdjustmentAmount,
+        string priceAdjustmentCurrency,
         int stockQuantity = 0)
     {
         if (productId == Guid.Empty)
@@ -76,8 +83,36 @@ public class ProductVariant : BaseEntity
         ProductId = productId;
         SetSku(sku);
         SetName(name);
-        SetPriceAdjustment(priceAdjustment);
+        SetPriceAdjustment(priceAdjustmentAmount, priceAdjustmentCurrency);
         SetStockQuantity(stockQuantity);
+    }
+
+    /// <summary>
+    /// Calculates the final price for this variant based on the base product price.
+    /// </summary>
+    /// <param name="basePrice">The base price of the product.</param>
+    /// <returns>The final price for this variant.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
+    public Money GetFinalPrice(Money basePrice)
+    {
+        ArgumentNullException.ThrowIfNull(basePrice);
+
+        if (basePrice.Currency != PriceAdjustmentCurrency)
+        {
+            throw new InvalidOperationException(
+                $"Cannot calculate final price: base price currency ({basePrice.Currency}) " +
+                $"does not match price adjustment currency ({PriceAdjustmentCurrency}).");
+        }
+
+        var finalAmount = basePrice.Amount + PriceAdjustmentAmount;
+
+        // Ensure the final price is not negative
+        if (finalAmount < 0)
+        {
+            finalAmount = 0;
+        }
+
+        return new Money(finalAmount, basePrice.Currency);
     }
 
     /// <summary>
@@ -103,11 +138,12 @@ public class ProductVariant : BaseEntity
     /// <summary>
     /// Updates the price adjustment for this variant.
     /// </summary>
-    /// <param name="priceAdjustment">The new price adjustment.</param>
-    /// <exception cref="ArgumentNullException">Thrown when priceAdjustment is null.</exception>
-    public void UpdatePriceAdjustment(Money priceAdjustment)
+    /// <param name="amount">The new price adjustment amount (can be negative for discounts).</param>
+    /// <param name="currency">The currency code for the price adjustment.</param>
+    /// <exception cref="ArgumentException">Thrown when currency is invalid.</exception>
+    public void UpdatePriceAdjustment(decimal amount, string currency)
     {
-        SetPriceAdjustment(priceAdjustment);
+        SetPriceAdjustment(amount, currency);
     }
 
     /// <summary>
@@ -172,10 +208,20 @@ public class ProductVariant : BaseEntity
         Name = name.Trim();
     }
 
-    private void SetPriceAdjustment(Money priceAdjustment)
+    private void SetPriceAdjustment(decimal amount, string currency)
     {
-        ArgumentNullException.ThrowIfNull(priceAdjustment);
-        PriceAdjustment = priceAdjustment;
+        if (string.IsNullOrWhiteSpace(currency))
+        {
+            throw new ArgumentException("Currency is required.", nameof(currency));
+        }
+
+        if (currency.Length != 3)
+        {
+            throw new ArgumentException("Currency must be a 3-character code.", nameof(currency));
+        }
+
+        PriceAdjustmentAmount = amount;
+        PriceAdjustmentCurrency = currency.ToUpperInvariant();
     }
 
     private void SetStockQuantity(int quantity)

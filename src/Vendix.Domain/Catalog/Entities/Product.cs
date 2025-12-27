@@ -243,18 +243,19 @@ public class Product : AggregateRoot, IAuditableEntity, ISoftDelete
     /// </summary>
     /// <param name="sku">The variant SKU.</param>
     /// <param name="name">The variant name.</param>
-    /// <param name="priceAdjustment">The price adjustment relative to the base price.</param>
+    /// <param name="priceAdjustmentAmount">The price adjustment amount (can be negative for discounts).</param>
+    /// <param name="priceAdjustmentCurrency">The currency code for the price adjustment.</param>
     /// <param name="stockQuantity">The initial stock quantity.</param>
     /// <returns>The created variant.</returns>
     /// <exception cref="InvalidOperationException">Thrown when a variant with this SKU already exists.</exception>
-    public ProductVariant AddVariant(Sku sku, string name, Money priceAdjustment, int stockQuantity = 0)
+    public ProductVariant AddVariant(Sku sku, string name, decimal priceAdjustmentAmount, string priceAdjustmentCurrency, int stockQuantity = 0)
     {
         if (_variants.Any(v => v.Sku == sku))
         {
             throw new InvalidOperationException($"A variant with SKU '{sku}' already exists.");
         }
 
-        var variant = new ProductVariant(Id, sku, name, priceAdjustment, stockQuantity);
+        var variant = new ProductVariant(Id, sku, name, priceAdjustmentAmount, priceAdjustmentCurrency, stockQuantity);
         _variants.Add(variant);
         return variant;
     }

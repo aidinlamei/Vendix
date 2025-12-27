@@ -169,17 +169,17 @@ public class ProductTests
         // Arrange
         var product = CreateValidProduct();
         var variantSku = new Sku("TEST-001-L");
-        var priceAdjustment = new Money(10.00m, "USD");
 
         // Act
-        var variant = product.AddVariant(variantSku, "Large", priceAdjustment, 100);
+        var variant = product.AddVariant(variantSku, "Large", 10.00m, "USD", 100);
 
         // Assert
         product.Variants.Should().HaveCount(1);
         product.Variants.Should().Contain(variant);
         variant.Sku.Should().Be(variantSku);
         variant.Name.Should().Be("Large");
-        variant.PriceAdjustment.Should().Be(priceAdjustment);
+        variant.PriceAdjustmentAmount.Should().Be(10.00m);
+        variant.PriceAdjustmentCurrency.Should().Be("USD");
         variant.StockQuantity.Should().Be(100);
     }
 
@@ -189,11 +189,10 @@ public class ProductTests
         // Arrange
         var product = CreateValidProduct();
         var variantSku = new Sku("TEST-001-L");
-        var priceAdjustment = new Money(10.00m, "USD");
-        product.AddVariant(variantSku, "Large", priceAdjustment);
+        product.AddVariant(variantSku, "Large", 10.00m, "USD");
 
         // Act
-        var act = () => product.AddVariant(variantSku, "Extra Large", priceAdjustment);
+        var act = () => product.AddVariant(variantSku, "Extra Large", 10.00m, "USD");
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -205,7 +204,7 @@ public class ProductTests
     {
         // Arrange
         var product = CreateValidProduct();
-        var variant = product.AddVariant(new Sku("TEST-001-L"), "Large", new Money(10.00m, "USD"));
+        var variant = product.AddVariant(new Sku("TEST-001-L"), "Large", 10.00m, "USD");
 
         // Act
         var result = product.RemoveVariant(variant.Id);
