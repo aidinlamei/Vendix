@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Step 1.4 - Infrastructure Layer (Date: 2025-12-27)
+
+**Added:**
+
+NuGet Packages:
+- `Microsoft.EntityFrameworkCore` (10.*) - Core EF functionality
+- `Microsoft.EntityFrameworkCore.Design` (10.*) - Design-time tools for migrations
+- `Npgsql.EntityFrameworkCore.PostgreSQL` (10.*) - PostgreSQL provider
+- `MediatR` (12.*) - Mediator pattern for CQRS
+- `FluentValidation` (11.*) - Validation library
+- `FluentValidation.DependencyInjectionExtensions` (11.*) - DI integration for FluentValidation
+- `Mapster` (7.*) - Fast object mapping
+- `Mapster.DependencyInjection` (1.*) - DI integration for Mapster
+
+Application Layer:
+- `IUnitOfWork.cs` - Interface for unit of work pattern with SaveChangesAsync method
+- `IDateTimeProvider.cs` - Interface for abstracting DateTime.UtcNow for testability
+
+Infrastructure/Persistence:
+- `VendixDbContext.cs` - Main DbContext with DbSets for all Catalog entities
+- `UnitOfWork.cs` - Implementation of IUnitOfWork wrapping DbContext.SaveChangesAsync
+
+Infrastructure/Persistence/Configurations:
+- `ProductConfiguration.cs` - EF Core configuration for Product aggregate and child entities
+- `CategoryConfiguration.cs` - EF Core configuration for Category aggregate and translations
+- `BrandConfiguration.cs` - EF Core configuration for Brand entity
+
+Infrastructure/Persistence/Interceptors:
+- `AuditableEntityInterceptor.cs` - Automatically sets CreatedAt, ModifiedAt, DeletedAt fields
+
+Infrastructure/Services:
+- `DateTimeProvider.cs` - Default implementation of IDateTimeProvider using DateTime.UtcNow
+
+Infrastructure:
+- `DependencyInjection.cs` - Extension method to register all infrastructure services
+
+**Technical Decisions:**
+- Value objects (Money, Sku, Slug) use HasConversion for EF Core persistence
+- Money is configured as an owned entity with separate Amount and Currency columns
+- Soft delete implemented via global query filter on ISoftDelete entities
+- Slug fields have unique indexes for URL routing and SEO
+- All collections use PropertyAccessMode.Field to access backing fields
+- AuditableEntityInterceptor handles automatic audit field population
+- PostgreSQL configured with retry-on-failure (3 retries, 30s max delay)
+- Debug builds enable sensitive data logging and detailed errors
+
+**Next Steps:**
+- Step 1.5: Create basic Blazor layout components
+- Step 1.6: Set up unit test project structure
+
+---
+
 ### Step 1.3 - Catalog Domain Entities (Date: 2025-12-27)
 
 **Added:**
