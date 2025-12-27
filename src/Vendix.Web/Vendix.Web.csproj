@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Vendix.Web</RootNamespace>
+    <AssemblyName>Vendix.Web</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vendix.Infrastructure\Vendix.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
