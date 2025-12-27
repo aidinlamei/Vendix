@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Step 1.3 - Catalog Domain Entities (Date: 2025-12-27)
+
+**Added:**
+
+Enums:
+- `ProductType.cs` - Enumeration for product types (Physical, Digital)
+
+Value Objects:
+- `Money.cs` - Immutable monetary value with Amount and Currency, including validation and arithmetic operations
+- `Sku.cs` - Stock Keeping Unit value object with alphanumeric validation (3-50 chars)
+- `Slug.cs` - URL-friendly slug value object with format validation and generation from text
+
+Entities:
+- `Product.cs` - Aggregate root with full product management (variants, specs, images, translations)
+- `Category.cs` - Aggregate root for hierarchical product categorization with translations
+- `Brand.cs` - Entity for product brands with name, slug, and logo
+- `ProductVariant.cs` - Entity for product variants with SKU, price adjustment, and stock
+- `ProductSpecification.cs` - Entity for product specifications (key-value pairs)
+- `ProductImage.cs` - Entity for product images with URL, alt text, sort order, and main flag
+- `ProductTranslation.cs` - Entity for product translations (title, description by language)
+- `CategoryTranslation.cs` - Entity for category translations (name, description by language)
+
+Repository Interfaces:
+- `IProductRepository.cs` - Repository interface with GetBySlugAsync, GetByCategoryAsync, SearchAsync
+- `ICategoryRepository.cs` - Repository interface with GetBySlugAsync, GetRootCategoriesAsync, GetWithChildrenAsync
+
+Tests:
+- `MoneyTests.cs` - Comprehensive tests for Money value object (creation, arithmetic, equality)
+- `ProductTests.cs` - Tests for Product aggregate root (creation, variants, specs, images, translations)
+
+**Technical Decisions:**
+- Product and Category are aggregate roots; other entities belong to their aggregates
+- Value objects (Money, Sku, Slug) are immutable with validation in constructor
+- Rich domain model with business logic in entities (not anemic)
+- Entities validate invariants in constructors and methods
+- Used C# 14 partial classes with [GeneratedRegex] for SKU and Slug validation patterns
+- Money supports arithmetic operations (+, -, *) with currency matching enforcement
+- Slug.FromText() provides automatic slug generation from arbitrary text
+- Product automatically sets first image as main; maintains main image invariant
+- Translations use ISO 639-1 language codes normalized to lowercase
+- All entities use file-scoped namespaces and XML documentation
+
+**Next Steps:**
+- Step 1.4: Set up DbContext and base infrastructure
+- Step 1.5: Create EF Core configurations for Catalog entities
+
+---
+
 ### Step 1.2 - Domain/Common (Date: 2025-12-27)
 
 **Added:**
