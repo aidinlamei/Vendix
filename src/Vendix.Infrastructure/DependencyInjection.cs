@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
+using Vendix.Domain.Catalog.Repositories;
 using Vendix.Infrastructure.Persistence;
 using Vendix.Infrastructure.Persistence.Interceptors;
+using Vendix.Infrastructure.Persistence.Repositories;
 using Vendix.Infrastructure.Services;
 
 namespace Vendix.Infrastructure;
@@ -56,6 +58,11 @@ public static class DependencyInjection
 
         // Register UnitOfWork
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Register Repositories
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IBrandRepository, BrandRepository>();
 
         return services;
     }
