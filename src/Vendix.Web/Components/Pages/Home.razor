@@ -1,7 +1,204 @@
 @page "/"
 
-<PageTitle>Vendix</PageTitle>
+@*
+    Home Page - Main landing page for Vendix e-commerce platform
+    Features: Hero section, featured products, categories preview
+*@
 
-<h1>Welcome to Vendix</h1>
+<PageTitle>Vendix - Your Global E-commerce Platform</PageTitle>
 
-<p>Your global-ready e-commerce platform.</p>
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <h1 class="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+                    Discover Amazing Products for Every Need
+                </h1>
+                <p class="text-lg text-primary-100 mb-8">
+                    Shop from thousands of products with secure checkout, fast shipping, and excellent customer service. Physical and digital products at your fingertips.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="/products" class="inline-flex items-center justify-center px-6 py-3 bg-white text-primary-700 font-semibold rounded-lg hover:bg-primary-50 transition">
+                        Browse Products
+                        <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </a>
+                    <a href="/categories" class="inline-flex items-center justify-center px-6 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-primary-700 transition">
+                        View Categories
+                    </a>
+                </div>
+            </div>
+            <div class="hidden lg:block">
+                <div class="relative">
+                    <!-- Decorative Elements -->
+                    <div class="absolute -top-4 -left-4 w-72 h-72 bg-primary-400 rounded-full opacity-20 blur-3xl"></div>
+                    <div class="absolute -bottom-4 -right-4 w-72 h-72 bg-accent-400 rounded-full opacity-20 blur-3xl"></div>
+                    <!-- Hero Image Placeholder -->
+                    <div class="relative bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white/20 rounded-xl h-40 flex items-center justify-center">
+                                <svg class="h-16 w-16 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                                </svg>
+                            </div>
+                            <div class="bg-white/20 rounded-xl h-40 flex items-center justify-center">
+                                <svg class="h-16 w-16 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="bg-white/20 rounded-xl h-40 flex items-center justify-center">
+                                <svg class="h-16 w-16 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="bg-white/20 rounded-xl h-40 flex items-center justify-center">
+                                <svg class="h-16 w-16 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-primary-100 text-primary-600 rounded-full mb-4">
+                    <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Free Shipping</h3>
+                <p class="text-gray-600">Free shipping on orders over $50. Fast delivery worldwide.</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-primary-100 text-primary-600 rounded-full mb-4">
+                    <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure Payment</h3>
+                <p class="text-gray-600">100% secure payment with multiple payment gateways.</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-primary-100 text-primary-600 rounded-full mb-4">
+                    <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">24/7 Support</h3>
+                <p class="text-gray-600">Dedicated support team available around the clock.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">Featured Products</h2>
+                <p class="text-gray-600 mt-1">Check out our most popular products</p>
+            </div>
+            <a href="/products" class="text-primary-600 hover:text-primary-700 font-medium flex items-center">
+                View All
+                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Product Grid Placeholder -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @for (var i = 1; i <= 4; i++)
+            {
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group">
+                    <!-- Product Image Placeholder -->
+                    <div class="aspect-square bg-gray-100 flex items-center justify-center relative">
+                        <svg class="h-20 w-20 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="absolute top-3 left-3 bg-primary-600 text-white text-xs font-medium px-2 py-1 rounded">New</span>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-medium text-gray-900 group-hover:text-primary-600 transition">Product Name @i</h3>
+                        <p class="text-sm text-gray-500 mt-1">Category</p>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-lg font-bold text-primary-600">$99.00</span>
+                            <button class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Categories Preview Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-2xl font-bold text-gray-900">Shop by Category</h2>
+            <p class="text-gray-600 mt-2">Browse our wide range of product categories</p>
+        </div>
+
+        <!-- Categories Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            @{
+                var categories = new[] {
+                    ("Electronics", "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"),
+                    ("Clothing", "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"),
+                    ("Books", "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"),
+                    ("Home", "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"),
+                    ("Sports", "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z"),
+                    ("Digital", "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4")
+                };
+            }
+
+            @foreach (var (name, path) in categories)
+            {
+                <a href="/categories/@name.ToLower()" class="group p-6 bg-gray-50 rounded-xl hover:bg-primary-50 hover:shadow-md transition text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 bg-white text-gray-600 group-hover:text-primary-600 rounded-full shadow-sm mb-3 transition">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="@path"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-medium text-gray-900 group-hover:text-primary-600 transition">@name</h3>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="py-16 bg-primary-600">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-4">Stay Updated</h2>
+            <p class="text-primary-100 mb-8 max-w-2xl mx-auto">
+                Subscribe to our newsletter for exclusive deals, new arrivals, and the latest updates.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                <input type="email"
+                       placeholder="Enter your email"
+                       class="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                <button class="px-6 py-3 bg-secondary-900 text-white font-medium rounded-lg hover:bg-secondary-800 transition">
+                    Subscribe
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

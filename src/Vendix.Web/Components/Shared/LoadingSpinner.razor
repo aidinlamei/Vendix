@@ -1,0 +1,47 @@
+@*
+    LoadingSpinner - Simple loading indicator component
+    Supports different sizes: small, medium (default), large
+*@
+
+<div class="flex justify-center items-center @Class">
+    <div class="@GetSpinnerClasses() animate-spin rounded-full border-t-transparent border-primary-600">
+    </div>
+    @if (!string.IsNullOrEmpty(Text))
+    {
+        <span class="ml-3 text-gray-600 @GetTextClasses()">@Text</span>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Size of the spinner: small, medium, large.
+    /// </summary>
+    [Parameter]
+    public string Size { get; set; } = "medium";
+
+    /// <summary>
+    /// Optional text to display next to the spinner.
+    /// </summary>
+    [Parameter]
+    public string? Text { get; set; }
+
+    /// <summary>
+    /// Additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string GetSpinnerClasses() => Size.ToLower() switch
+    {
+        "small" => "h-4 w-4 border-2",
+        "large" => "h-12 w-12 border-4",
+        _ => "h-8 w-8 border-3"
+    };
+
+    private string GetTextClasses() => Size.ToLower() switch
+    {
+        "small" => "text-sm",
+        "large" => "text-lg",
+        _ => "text-base"
+    };
+}
