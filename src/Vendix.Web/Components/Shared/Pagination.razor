@@ -1,0 +1,183 @@
+@*
+    Pagination - Pagination component with page numbers
+    Supports navigation, page size selection, and shows current range
+*@
+
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+    <!-- Items Info -->
+    <div class="text-sm text-gray-600">
+        Showing <span class="font-medium">@FirstItem</span> to <span class="font-medium">@LastItem</span> of <span class="font-medium">@TotalItems</span> results
+    </div>
+
+    <!-- Pagination Controls -->
+    <nav class="flex items-center gap-1" aria-label="Pagination">
+        <!-- Previous Button -->
+        <button @onclick="GoToPrevious"
+                disabled="@(!HasPrevious)"
+                class="@GetNavButtonClasses(!HasPrevious) px-3 py-2 text-sm font-medium rounded-lg transition">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </button>
+
+        <!-- Page Numbers -->
+        @foreach (var page in GetPageNumbers())
+        {
+            @if (page == -1)
+            {
+                <span class="px-3 py-2 text-gray-400">...</span>
+            }
+            else
+            {
+                <button @onclick="() => GoToPage(page)"
+                        class="@GetPageButtonClasses(page) px-3 py-2 text-sm font-medium rounded-lg transition min-w-[40px]">
+                    @page
+                </button>
+            }
+        }
+
+        <!-- Next Button -->
+        <button @onclick="GoToNext"
+                disabled="@(!HasNext)"
+                class="@GetNavButtonClasses(!HasNext) px-3 py-2 text-sm font-medium rounded-lg transition">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+        </button>
+    </nav>
+</div>
+
+@code {
+    /// <summary>
+    /// Current page number (1-based).
+    /// </summary>
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    /// <summary>
+    /// Event callback when current page changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> CurrentPageChanged { get; set; }
+
+    /// <summary>
+    /// Total number of items.
+    /// </summary>
+    [Parameter]
+    public int TotalItems { get; set; }
+
+    /// <summary>
+    /// Number of items per page.
+    /// </summary>
+    [Parameter]
+    public int PageSize { get; set; } = 10;
+
+    /// <summary>
+    /// Number of page buttons to show (excluding first/last).
+    /// </summary>
+    [Parameter]
+    public int MaxVisiblePages { get; set; } = 5;
+
+    /// <summary>
+    /// Event callback when page changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> OnPageChange { get; set; }
+
+    private int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+    private bool HasPrevious => CurrentPage > 1;
+    private bool HasNext => CurrentPage < TotalPages;
+    private int FirstItem => TotalItems == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+    private int LastItem => Math.Min(CurrentPage * PageSize, TotalItems);
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages && page != CurrentPage)
+        {
+            CurrentPage = page;
+            await CurrentPageChanged.InvokeAsync(page);
+            await OnPageChange.InvokeAsync(page);
+        }
+    }
+
+    private async Task GoToPrevious()
+    {
+        if (HasPrevious)
+        {
+            await GoToPage(CurrentPage - 1);
+        }
+    }
+
+    private async Task GoToNext()
+    {
+        if (HasNext)
+        {
+            await GoToPage(CurrentPage + 1);
+        }
+    }
+
+    private IEnumerable<int> GetPageNumbers()
+    {
+        if (TotalPages <= MaxVisiblePages)
+        {
+            return Enumerable.Range(1, TotalPages);
+        }
+
+        var pages = new List<int>();
+        var halfVisible = MaxVisiblePages / 2;
+
+        // Always show first page
+        pages.Add(1);
+
+        var startPage = Math.Max(2, CurrentPage - halfVisible);
+        var endPage = Math.Min(TotalPages - 1, CurrentPage + halfVisible);
+
+        // Adjust if near start
+        if (CurrentPage <= halfVisible + 1)
+        {
+            endPage = Math.Min(TotalPages - 1, MaxVisiblePages - 1);
+        }
+
+        // Adjust if near end
+        if (CurrentPage >= TotalPages - halfVisible)
+        {
+            startPage = Math.Max(2, TotalPages - MaxVisiblePages + 2);
+        }
+
+        // Add ellipsis before middle pages if needed
+        if (startPage > 2)
+        {
+            pages.Add(-1); // -1 represents ellipsis
+        }
+
+        // Add middle pages
+        for (var i = startPage; i <= endPage; i++)
+        {
+            pages.Add(i);
+        }
+
+        // Add ellipsis after middle pages if needed
+        if (endPage < TotalPages - 1)
+        {
+            pages.Add(-1); // -1 represents ellipsis
+        }
+
+        // Always show last page if more than 1 page
+        if (TotalPages > 1)
+        {
+            pages.Add(TotalPages);
+        }
+
+        return pages;
+    }
+
+    private string GetNavButtonClasses(bool disabled) =>
+        disabled
+            ? "text-gray-300 cursor-not-allowed bg-gray-100"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
+
+    private string GetPageButtonClasses(int page) =>
+        page == CurrentPage
+            ? "bg-primary-600 text-white"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
+}

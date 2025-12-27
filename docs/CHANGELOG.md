@@ -6,6 +6,90 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Step 1.5 - Blazor Layout Components (Date: 2025-12-27)
+
+**Added:**
+
+Tailwind CSS Integration:
+- Added Tailwind CSS CDN to `App.razor` with custom Vendix brand color palette
+- Configured primary (blue), secondary (slate), and accent (purple) color schemes
+- Added utility colors for success, warning, error, and info states
+
+Layout Components (src/Vendix.Web/Components/Layout/):
+- `MainLayout.razor` - Public site layout with:
+  - Responsive header with logo, navigation links (Home, Products, Categories)
+  - Search bar with icon
+  - Cart icon with badge counter
+  - Login button
+  - Mobile hamburger menu with full navigation
+  - Footer with brand info, quick links, support links, social media icons
+  - Top promotional bar ("Free shipping on orders over $50")
+
+- `AdminLayout.razor` - Admin panel layout with:
+  - Collapsible sidebar with navigation (Dashboard, Products, Categories, Orders, Customers, Settings)
+  - Top bar with notifications and user dropdown menu
+  - Back to Store link
+  - Mobile-responsive with slide-out sidebar
+  - Active link highlighting with NavLink component
+
+Shared Components (src/Vendix.Web/Components/Shared/):
+- `LoadingSpinner.razor` - Loading indicator with size options (small, medium, large) and optional text
+- `Toast.razor` - Toast notification component with:
+  - Support for success, error, warning, info types
+  - Auto-dismiss with configurable duration
+  - Close button and animated slide-in
+- `ConfirmDialog.razor` - Confirmation modal with:
+  - Support for info, warning, danger types
+  - Customizable title, message, and button text
+  - Backdrop click to cancel
+- `Pagination.razor` - Pagination component with:
+  - Page numbers with ellipsis for large page counts
+  - Previous/Next navigation
+  - Items count display ("Showing X to Y of Z results")
+  - Configurable max visible pages
+
+Page Updates:
+- `Home.razor` - Complete redesign with:
+  - Hero section with gradient background and CTA buttons
+  - Features section (Free Shipping, Secure Payment, 24/7 Support)
+  - Featured Products grid with placeholder cards
+  - Shop by Category section with icons
+  - Newsletter subscription section
+
+- `Admin/Dashboard.razor` - New admin dashboard with:
+  - Stats cards (Total Revenue, Orders, Products, Customers) with trends
+  - Recent Orders table with status badges
+  - Quick Actions panel (Add Product, Add Category, View Orders, Settings)
+  - Top Products list
+
+Import Updates:
+- Updated `_Imports.razor` with Layout and Shared component namespaces
+
+**Technical Decisions:**
+- Used Tailwind CSS via CDN for rapid prototyping (production should use build pipeline)
+- Mobile-first responsive design with md: and lg: breakpoints
+- Component parameters use standard Blazor patterns (Parameter, EventCallback)
+- AdminLayout uses NavLink for automatic active state management
+- Toast component implements IDisposable for timer cleanup
+- Pagination uses 1-based page indexing for user-friendly display
+- All components include XML documentation comments
+- SVG icons used throughout for scalability and performance
+
+**Brand Colors:**
+- Primary: Blue (#3b82f6) - Main brand color
+- Secondary: Slate (#64748b) - Neutral elements
+- Accent: Purple (#d946ef) - Highlights
+- Success: Green (#10b981)
+- Warning: Amber (#f59e0b)
+- Error: Red (#ef4444)
+- Info: Blue (#3b82f6)
+
+**Next Steps:**
+- Step 1.6: Set up unit test project structure
+- Step 2.1: Implement Product CRUD with Application layer
+
+---
+
 ### Step 1.4 - Infrastructure Layer (Date: 2025-12-27)
 
 **Added:**
