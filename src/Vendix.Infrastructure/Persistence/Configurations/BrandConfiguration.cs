@@ -59,5 +59,10 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
             .HasMaxLength(100);
 
         builder.HasQueryFilter(b => !b.IsDeleted);
+
+        // Concurrency Token
+        builder.Property(b => b.RowVersion)
+            .IsRowVersion()
+            .IsConcurrencyToken();
     }
 }

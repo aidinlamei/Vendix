@@ -6,6 +6,165 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 1 - Core Models and CRUD Implementation (Date: 2025-12-27)
+
+**Added:**
+
+Application Layer - Core Models (src/Vendix.Application/Common/Models/):
+- `Result.cs` - Result pattern implementation:
+  - Generic `Result<T>` class with IsSuccess, IsFailure, Value, Error properties
+  - Static factory methods: Success(T value), Failure(string error)
+  - Implicit conversion from T to Result<T>
+  - Map and Bind methods for functional composition
+  - Match method for pattern matching
+  - Non-generic `Result` class for commands without return value
+
+- `PaginatedList.cs` - Paginated list for query results:
+  - Items, PageNumber, PageSize, TotalCount, TotalPages properties
+  - HasPreviousPage, HasNextPage computed properties
+  - Static CreateAsync method that takes IQueryable<T> and applies Skip/Take
+  - Static Create method for in-memory collections
+  - Static Empty method for empty paginated results
+
+Application Layer - Custom Exceptions (src/Vendix.Application/Common/Exceptions/):
+- `NotFoundException.cs` - For entity not found scenarios:
+  - EntityName and Key properties
+  - Static ForEntity<T> factory method
+
+- `ValidationException.cs` - For FluentValidation failures:
+  - Dictionary<string, string[]> Errors property
+  - Constructor accepting IEnumerable<ValidationFailure>
+
+- `BusinessRuleException.cs` - For domain rule violations:
+  - RuleName and Details properties
+
+- `ConflictException.cs` - For duplicate entries:
+  - EntityName, PropertyName, ConflictingValue properties
+  - Static ForDuplicate<T> factory method
+
+Application Layer - Pipeline Behaviors (src/Vendix.Application/Common/Behaviors/):
+- `ValidationBehavior.cs` - MediatR pipeline behavior:
+  - Injects IEnumerable<IValidator<TRequest>>
+  - Runs all validators before handler
+  - Throws ValidationException with all errors if validation fails
+  - Uses async validation
+
+- `LoggingBehavior.cs` - MediatR pipeline behavior:
+  - Injects ILogger<LoggingBehavior<TRequest, TResponse>>
+  - Logs request name, user info (if available), timestamp
+  - Uses Stopwatch to measure response time
+  - Logs warnings for slow requests (>500ms)
+
+Application Layer - Services (src/Vendix.Application/Common/Interfaces/):
+- `ICurrentUserService.cs` - Interface for current user information:
+  - UserId, UserName, IsAuthenticated properties
+  - IsInRole(string role) method
+
+Application Layer - Product CRUD (src/Vendix.Application/Catalog/):
+- DTOs (DTOs/ProductDto.cs):
+  - ProductDto for detail views
+  - ProductListDto for list views
+  - ProductVariantDto, ProductSpecificationDto, ProductImageDto
+  - CreateProductDto, UpdateProductDto for inputs
+
+- Commands:
+  - CreateProductCommand with handler and validator
+  - UpdateProductCommand with handler and validator
+  - DeleteProductCommand with handler (soft delete)
+
+- Queries:
+  - GetProductByIdQuery with handler
+  - GetProductBySlugQuery with handler
+  - GetProductsQuery with pagination and filters
+
+- Mappings (Mappings/ProductMappingConfig.cs):
+  - Mapster IRegister implementation
+  - Product to ProductDto/ProductListDto mappings
+  - Variant, Specification, Image mappings
+  - Money value object to decimal conversion
+
+Infrastructure Layer - Identity (src/Vendix.Infrastructure/Identity/):
+- `CurrentUserService.cs` - ICurrentUserService implementation:
+  - Uses IHttpContextAccessor
+  - Gets user info from HttpContext.User claims
+  - Returns null for UserId/UserName if not authenticated
+
+Domain Layer - Concurrency:
+- `AggregateRoot.cs` - Added RowVersion property for optimistic concurrency
+
+**Updated:**
+
+- `AuditableEntityInterceptor.cs` - Inject ICurrentUserService (optional):
+  - Sets CreatedBy, ModifiedBy, DeletedBy from current user
+
+- `DependencyInjection.cs` (Application) - Register behaviors:
+  - Added LoggingBehavior and ValidationBehavior to MediatR pipeline
+
+- `DependencyInjection.cs` (Infrastructure) - Register services:
+  - Added HttpContextAccessor registration
+  - Added ICurrentUserService -> CurrentUserService as Scoped
+
+- EF Configurations - Added RowVersion:
+  - ProductConfiguration: Added RowVersion as concurrency token
+  - CategoryConfiguration: Added RowVersion as concurrency token
+  - BrandConfiguration: Added RowVersion as concurrency token
+
+- ProductVariant Entity - Fixed PriceAdjustment:
+  - Changed from Money to PriceAdjustmentAmount (decimal) and PriceAdjustmentCurrency (string)
+  - Added GetFinalPrice(Money basePrice) method
+  - Now allows negative amounts for discounts
+
+- ProductVariantConfiguration - Updated for new properties:
+  - Removed OwnsOne for PriceAdjustment
+  - Configured PriceAdjustmentAmount with precision (18, 4)
+  - Configured PriceAdjustmentCurrency with max length 3
+
+- Program.cs (Web and Api) - Added service registration:
+  - Added AddApplication() and AddInfrastructure() calls
+  - Configured connection string from configuration
+
+- appsettings.json (Web and Api) - Added connection string:
+  - DefaultConnection for PostgreSQL
+
+Tests:
+- `CreateProductCommandValidatorTests.cs` - Validator tests:
+  - Valid command passes
+  - Empty name fails
+  - Invalid SKU format fails
+  - Negative price fails
+  - Currency length validation
+
+- `ValidationBehaviorTests.cs` - Behavior tests:
+  - Valid request passes through
+  - Invalid request throws ValidationException
+  - No validators passes through
+  - Multiple validators combine errors
+
+- `BrandTests.cs` - Brand aggregate tests:
+  - Creation with valid inputs
+  - Name and slug updates
+  - Logo URL update
+  - IAuditableEntity and ISoftDelete implementation
+
+- `README.md` - Updated with:
+  - Technology stack
+  - Getting started guide
+  - Project structure
+  - Key features
+  - Development instructions
+
+**Technical Decisions:**
+- Result pattern provides functional error handling without exceptions for expected failures
+- Pipeline behaviors centralize cross-cutting concerns (validation, logging)
+- ICurrentUserService is optional in interceptor to support non-web scenarios
+- RowVersion uses byte[] for database-agnostic concurrency tokens
+- ProductVariant PriceAdjustment split into separate properties to allow negative values
+- Commands use record types for immutability
+- Validators use FluentValidation with async validation
+- Mapster used for object mapping with IRegister pattern
+
+---
+
 ### Phase 1 Fixes and Completions (Date: 2025-12-27)
 
 **Fixed:**

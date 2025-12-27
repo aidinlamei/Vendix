@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Domain.Catalog.Repositories;
+using Vendix.Infrastructure.Identity;
 using Vendix.Infrastructure.Persistence;
 using Vendix.Infrastructure.Persistence.Interceptors;
 using Vendix.Infrastructure.Persistence.Repositories;
@@ -28,8 +29,12 @@ public static class DependencyInjection
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
+        // Register HttpContextAccessor for ICurrentUserService
+        services.AddHttpContextAccessor();
+
         // Register services
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         // Register interceptors
         services.AddScoped<AuditableEntityInterceptor>();

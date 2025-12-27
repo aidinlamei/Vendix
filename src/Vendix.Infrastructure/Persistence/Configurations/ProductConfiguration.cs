@@ -98,6 +98,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasQueryFilter(p => !p.IsDeleted);
 
+        // Concurrency Token
+        builder.Property(p => p.RowVersion)
+            .IsRowVersion()
+            .IsConcurrencyToken();
+
         // Variants Collection
         builder.HasMany(p => p.Variants)
             .WithOne(v => v.Product)
@@ -164,19 +169,14 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.HasIndex(v => v.Sku)
             .IsUnique();
 
-        // Money Value Object - Owned Entity
-        builder.OwnsOne(v => v.PriceAdjustment, priceBuilder =>
-        {
-            priceBuilder.Property(m => m.Amount)
-                .HasColumnName("PriceAdjustment")
-                .HasPrecision(18, 4)
-                .IsRequired();
+        // Price Adjustment (can be negative for discounts)
+        builder.Property(v => v.PriceAdjustmentAmount)
+            .HasPrecision(18, 4)
+            .IsRequired();
 
-            priceBuilder.Property(m => m.Currency)
-                .HasColumnName("PriceAdjustmentCurrency")
-                .HasMaxLength(3)
-                .IsRequired();
-        });
+        builder.Property(v => v.PriceAdjustmentCurrency)
+            .HasMaxLength(3)
+            .IsRequired();
 
         builder.Property(v => v.StockQuantity)
             .IsRequired();

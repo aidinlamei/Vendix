@@ -59,6 +59,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.HasQueryFilter(c => !c.IsDeleted);
 
+        // Concurrency Token
+        builder.Property(c => c.RowVersion)
+            .IsRowVersion()
+            .IsConcurrencyToken();
+
         // Translations Collection
         builder.HasMany(c => c.Translations)
             .WithOne(t => t.Category)
