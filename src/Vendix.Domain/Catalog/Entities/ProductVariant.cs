@@ -100,7 +100,28 @@ public class ProductVariant : BaseEntity
     /// <param name="basePrice">The base price of the product.</param>
     /// <returns>A result containing the final price and whether it was clamped to zero.</returns>
     /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
-    public FinalPriceResult GetFinalPrice(Money basePrice)
+    /// <remarks>
+    /// This method is maintained for backward compatibility.
+    /// Consider using <see cref="GetFinalPriceWithInfo"/> for more detailed information.
+    /// </remarks>
+    public Money GetFinalPrice(Money basePrice)
+    {
+        return GetFinalPriceWithInfo(basePrice).Price;
+    }
+
+    /// <summary>
+    /// Calculates the final price for this variant based on the base product price,
+    /// returning additional information about the calculation.
+    /// </summary>
+    /// <param name="basePrice">The base price of the product.</param>
+    /// <returns>A <see cref="FinalPriceResult"/> containing the final price and whether it was clamped.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
+    /// <remarks>
+    /// If the calculated price would be negative, it is clamped to zero.
+    /// The <see cref="FinalPriceResult.WasClampedToZero"/> property indicates when this occurs,
+    /// allowing calling code to log a warning or take other appropriate action.
+    /// </remarks>
+    public FinalPriceResult GetFinalPriceWithInfo(Money basePrice)
     {
         ArgumentNullException.ThrowIfNull(basePrice);
 
@@ -117,12 +138,12 @@ public class ProductVariant : BaseEntity
         // Ensure the final price is not negative
         if (finalAmount < 0)
         {
+            wasClampedToZero = true;
             finalAmount = 0;
             wasClampedToZero = true;
         }
 
-        var finalPrice = new Money(finalAmount, basePrice.Currency);
-        return new FinalPriceResult(finalPrice, wasClampedToZero);
+        return new FinalPriceResult(new Money(finalAmount, basePrice.Currency), wasClampedToZero);
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Domain.Catalog.Repositories;
@@ -40,6 +41,14 @@ public static class DependencyInjection
         // Register services
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        // Register caching
+        services.AddMemoryCache();
+        services.Configure<CacheSettings>(options =>
+        {
+            options.DefaultExpirationMinutes = 5;
+        });
+        services.AddSingleton<ICacheService, MemoryCacheService>();
 
         // Register interceptors
         services.AddScoped<AuditableEntityInterceptor>();

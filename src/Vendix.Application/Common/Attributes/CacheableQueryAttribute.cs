@@ -1,32 +1,23 @@
 namespace Vendix.Application.Common.Attributes;
 
 /// <summary>
-/// Marks a query as cacheable with specified cache key and expiry.
+/// Marks a query as cacheable with optional configuration.
 /// </summary>
-/// <remarks>
-/// Apply this attribute to query classes (e.g., GetProductsQuery) to enable caching.
-/// The CachingBehavior pipeline will intercept queries with this attribute and cache their results.
-/// </remarks>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class CacheableQueryAttribute : Attribute
 {
     /// <summary>
-    /// Gets or sets the cache key for this query.
+    /// Custom cache key prefix. If not set, auto-generated from query type.
     /// </summary>
-    /// <remarks>
-    /// Use constants from CacheKeys class for consistency.
-    /// For parameterized queries, the behavior will append parameter values to this key.
-    /// </remarks>
-    public string Key { get; set; } = string.Empty;
+    public string? Key { get; set; }
 
     /// <summary>
-    /// Gets or sets the cache expiry time in minutes.
+    /// Cache expiration in minutes. Default is 5.
     /// </summary>
-    /// <remarks>
-    /// Default is 5 minutes. Adjust based on data volatility:
-    /// - Products: 5 minutes
-    /// - Categories: 30 minutes
-    /// - Settings: 60 minutes
-    /// </remarks>
     public int ExpiryMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// If true, bypasses cache for this request.
+    /// </summary>
+    public bool BypassCache { get; set; }
 }

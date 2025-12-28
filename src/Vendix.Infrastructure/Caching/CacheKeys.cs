@@ -1,94 +1,124 @@
 namespace Vendix.Infrastructure.Caching;
 
 /// <summary>
-/// Provides constants for cache keys used throughout the application.
+/// Contains cache key constants and helper methods for generating cache keys.
 /// </summary>
 /// <remarks>
-/// Using consistent cache keys helps with invalidation and prevents key collisions.
-/// All keys are prefixed by domain entity for easy prefix-based removal.
+/// Using constants for cache keys ensures consistency and prevents typos.
+/// Key format follows the pattern: {Domain}:{Entity}:{Identifier}
 /// </remarks>
 public static class CacheKeys
 {
     /// <summary>
-    /// Cache key prefix for all product-related cache entries.
+    /// Cache key prefix for products.
     /// </summary>
-    public const string ProductsPrefix = "products:";
+    public const string Products = "products";
 
     /// <summary>
-    /// Cache key for all products list.
+    /// Cache key prefix for categories.
     /// </summary>
-    public const string AllProducts = "products:all";
+    public const string Categories = "categories";
 
     /// <summary>
-    /// Cache key pattern for a specific product by ID. Use string.Format to create actual key.
+    /// Cache key prefix for brands.
     /// </summary>
-    public const string ProductById = "products:id:{0}";
+    public const string Brands = "brands";
 
     /// <summary>
-    /// Cache key pattern for a specific product by slug. Use string.Format to create actual key.
+    /// Default cache expiration in minutes for product data.
     /// </summary>
-    public const string ProductBySlug = "products:slug:{0}";
+    public const int ProductsCacheMinutes = 5;
 
     /// <summary>
-    /// Cache key prefix for all category-related cache entries.
+    /// Default cache expiration in minutes for category data.
     /// </summary>
-    public const string CategoriesPrefix = "categories:";
+    public const int CategoriesCacheMinutes = 30;
 
     /// <summary>
-    /// Cache key for all categories list.
+    /// Default cache expiration in minutes for brand data.
     /// </summary>
-    public const string AllCategories = "categories:all";
+    public const int BrandsCacheMinutes = 30;
 
     /// <summary>
-    /// Cache key pattern for a specific category by ID. Use string.Format to create actual key.
+    /// Generates a cache key for a specific product by ID.
     /// </summary>
-    public const string CategoryById = "categories:id:{0}";
+    /// <param name="productId">The product ID.</param>
+    /// <returns>The cache key.</returns>
+    public static string ProductById(Guid productId) => $"{Products}:id:{productId}";
 
     /// <summary>
-    /// Cache key prefix for all brand-related cache entries.
+    /// Generates a cache key for a specific product by slug.
     /// </summary>
-    public const string BrandsPrefix = "brands:";
+    /// <param name="slug">The product slug.</param>
+    /// <returns>The cache key.</returns>
+    public static string ProductBySlug(string slug) => $"{Products}:slug:{slug.ToLowerInvariant()}";
+
+    /// <summary>
+    /// Generates a cache key for a product search query.
+    /// </summary>
+    /// <param name="searchTerm">The search term.</param>
+    /// <param name="categoryId">Optional category filter.</param>
+    /// <param name="brandId">Optional brand filter.</param>
+    /// <param name="minPrice">Optional min price filter.</param>
+    /// <param name="maxPrice">Optional max price filter.</param>
+    /// <param name="pageNumber">The page number.</param>
+    /// <param name="pageSize">The page size.</param>
+    /// <returns>The cache key.</returns>
+    public static string ProductSearch(
+        string? searchTerm,
+        Guid? categoryId,
+        Guid? brandId,
+        decimal? minPrice,
+        decimal? maxPrice,
+        int pageNumber,
+        int pageSize)
+    {
+        var key = $"{Products}:search:" +
+            $"q:{searchTerm ?? "null"}:" +
+            $"cat:{categoryId?.ToString() ?? "null"}:" +
+            $"brand:{brandId?.ToString() ?? "null"}:" +
+            $"min:{minPrice?.ToString("F2") ?? "null"}:" +
+            $"max:{maxPrice?.ToString("F2") ?? "null"}:" +
+            $"p:{pageNumber}:s:{pageSize}";
+
+        return key;
+    }
+
+    /// <summary>
+    /// Generates a cache key for a specific category by ID.
+    /// </summary>
+    /// <param name="categoryId">The category ID.</param>
+    /// <returns>The cache key.</returns>
+    public static string CategoryById(Guid categoryId) => $"{Categories}:id:{categoryId}";
+
+    /// <summary>
+    /// Generates a cache key for a specific category by slug.
+    /// </summary>
+    /// <param name="slug">The category slug.</param>
+    /// <returns>The cache key.</returns>
+    public static string CategoryBySlug(string slug) => $"{Categories}:slug:{slug.ToLowerInvariant()}";
+
+    /// <summary>
+    /// Cache key for root categories list.
+    /// </summary>
+    public const string RootCategories = $"{Categories}:root";
+
+    /// <summary>
+    /// Generates a cache key for a specific brand by ID.
+    /// </summary>
+    /// <param name="brandId">The brand ID.</param>
+    /// <returns>The cache key.</returns>
+    public static string BrandById(Guid brandId) => $"{Brands}:id:{brandId}";
+
+    /// <summary>
+    /// Generates a cache key for a specific brand by slug.
+    /// </summary>
+    /// <param name="slug">The brand slug.</param>
+    /// <returns>The cache key.</returns>
+    public static string BrandBySlug(string slug) => $"{Brands}:slug:{slug.ToLowerInvariant()}";
 
     /// <summary>
     /// Cache key for all brands list.
     /// </summary>
-    public const string AllBrands = "brands:all";
-
-    /// <summary>
-    /// Cache key pattern for a specific brand by ID. Use string.Format to create actual key.
-    /// </summary>
-    public const string BrandById = "brands:id:{0}";
-
-    /// <summary>
-    /// Cache key for store settings.
-    /// </summary>
-    public const string StoreSettings = "settings:store";
-
-    /// <summary>
-    /// Helper method to create a cache key for a product by ID.
-    /// </summary>
-    /// <param name="productId">The product ID.</param>
-    /// <returns>The formatted cache key.</returns>
-    public static string GetProductByIdKey(Guid productId) => string.Format(ProductById, productId);
-
-    /// <summary>
-    /// Helper method to create a cache key for a product by slug.
-    /// </summary>
-    /// <param name="slug">The product slug.</param>
-    /// <returns>The formatted cache key.</returns>
-    public static string GetProductBySlugKey(string slug) => string.Format(ProductBySlug, slug);
-
-    /// <summary>
-    /// Helper method to create a cache key for a category by ID.
-    /// </summary>
-    /// <param name="categoryId">The category ID.</param>
-    /// <returns>The formatted cache key.</returns>
-    public static string GetCategoryByIdKey(Guid categoryId) => string.Format(CategoryById, categoryId);
-
-    /// <summary>
-    /// Helper method to create a cache key for a brand by ID.
-    /// </summary>
-    /// <param name="brandId">The brand ID.</param>
-    /// <returns>The formatted cache key.</returns>
-    public static string GetBrandByIdKey(Guid brandId) => string.Format(BrandById, brandId);
+    public const string AllBrands = $"{Brands}:all";
 }

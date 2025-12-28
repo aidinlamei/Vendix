@@ -27,11 +27,14 @@ public class ProductRepository : IProductRepository
     /// <inheritdoc />
     public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        // Full includes for detail view - uses split query for better performance
         return await _context.Products
             .Include(p => p.Variants)
             .Include(p => p.Specifications)
             .Include(p => p.Images)
             .Include(p => p.Translations)
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
@@ -39,11 +42,14 @@ public class ProductRepository : IProductRepository
     /// <inheritdoc />
     public async Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
+        // Full includes for detail view - uses split query for better performance
         return await _context.Products
             .Include(p => p.Variants)
             .Include(p => p.Specifications)
             .Include(p => p.Images)
             .Include(p => p.Translations)
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Slug.Value == slug.ToLowerInvariant(), cancellationToken);
     }
@@ -53,11 +59,12 @@ public class ProductRepository : IProductRepository
         Guid categoryId,
         CancellationToken cancellationToken = default)
     {
+        // Minimal includes for list view - only main image needed
         return await _context.Products
             .AsNoTracking()
-            .Include(p => p.Variants)
-            .Include(p => p.Images)
-            .Include(p => p.Translations)
+            .Include(p => p.Images.Where(i => i.IsMain))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
             .Where(p => p.CategoryId == categoryId)
             .ToListAsync(cancellationToken);
     }
@@ -73,18 +80,17 @@ public class ProductRepository : IProductRepository
         int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
+        // Build base query without heavy includes - optimized for list view
         var query = _context.Products
             .AsNoTracking()
-            .Include(p => p.Images.Where(i => i.IsMain))
-            .AsSplitQuery()
             .AsQueryable();
 
+        // Apply filters
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.ToLowerInvariant();
             query = query.Where(p =>
-                p.Name.ToLower().Contains(term) ||
-                (p.Description != null && p.Description.ToLower().Contains(term)));
+                EF.Functions.ILike(p.Name, $"%{searchTerm}%") ||
+                (p.Description != null && EF.Functions.ILike(p.Description, $"%{searchTerm}%")));
         }
 
         if (categoryId.HasValue)
@@ -110,10 +116,16 @@ public class ProductRepository : IProductRepository
         // Get total count before pagination
         var totalCount = await query.CountAsync(cancellationToken);
 
-        // Apply pagination
+        // Apply pagination and minimal includes for list view
+        // Only include main image for list display - NO variants, specifications, or translations
         var items = await query
+            .Include(p => p.Images.Where(i => i.IsMain))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
+            .OrderByDescending(p => p.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
