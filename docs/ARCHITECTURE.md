@@ -676,8 +676,8 @@ src/Vendix.Web/Components/Pages/Catalog/
 
 | # | Task | Status |
 |---|------|--------|
-| 1 | Category Commands & Queries | ⬜ |
-| 2 | Category Admin Pages | ⬜ |
+| 1 | Category Commands & Queries | ✅ |
+| 2 | Category Admin Pages | ✅ |
 | 3 | Brand Commands & Queries | ⬜ |
 | 4 | Brand Admin Pages | ⬜ |
 | 5 | LocalFileStorage Implementation | ⬜ |
