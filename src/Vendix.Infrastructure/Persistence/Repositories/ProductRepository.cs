@@ -88,10 +88,9 @@ public class ProductRepository : IProductRepository
         // Apply filters
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.ToLowerInvariant();
             query = query.Where(p =>
-                p.Name.ToLower().Contains(term) ||
-                (p.Description != null && p.Description.ToLower().Contains(term)));
+                EF.Functions.ILike(p.Name, $"%{searchTerm}%") ||
+                (p.Description != null && EF.Functions.ILike(p.Description, $"%{searchTerm}%")));
         }
 
         if (categoryId.HasValue)
