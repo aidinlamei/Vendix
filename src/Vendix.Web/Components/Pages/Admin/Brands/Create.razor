@@ -1,0 +1,152 @@
+@page "/admin/brands/create"
+@layout AdminLayout
+
+@using MediatR
+@using Vendix.Application.Catalog.Commands
+@using Vendix.Web.Components.Shared
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Create Brand - Vendix Admin</PageTitle>
+
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center space-x-4">
+        <a href="/admin/brands" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Create Brand</h1>
+            <p class="text-gray-600 mt-1">Add a new product brand</p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow">
+        <EditForm Model="_model" OnValidSubmit="HandleSubmit" class="p-6 space-y-6">
+            <DataAnnotationsValidator />
+
+            <!-- Name -->
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Name <span class="text-red-500">*</span>
+                </label>
+                <InputText id="name" @bind-Value="_model.Name" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="e.g., Apple, Samsung, Nike" />
+                <ValidationMessage For="() => _model.Name" class="text-red-500 text-sm mt-1" />
+            </div>
+
+            <!-- Slug -->
+            <div>
+                <label for="slug" class="block text-sm font-medium text-gray-700 mb-1">
+                    Slug
+                </label>
+                <div class="flex items-center">
+                    <span class="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500">/brands/</span>
+                    <InputText id="slug" @bind-Value="_model.Slug" 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                               placeholder="apple (auto-generated if empty)" />
+                </div>
+                <p class="text-sm text-gray-500 mt-1">URL-friendly identifier. Leave empty to auto-generate from name.</p>
+            </div>
+
+            <!-- Logo URL -->
+            <div>
+                <label for="logoUrl" class="block text-sm font-medium text-gray-700 mb-1">
+                    Logo URL
+                </label>
+                <InputText id="logoUrl" @bind-Value="_model.LogoUrl" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           placeholder="https://example.com/logo.png" />
+                <p class="text-sm text-gray-500 mt-1">Direct URL to the brand logo image. Must be a valid HTTP/HTTPS URL.</p>
+                <ValidationMessage For="() => _model.LogoUrl" class="text-red-500 text-sm mt-1" />
+            </div>
+
+            <!-- Logo Preview -->
+            @if (!string.IsNullOrEmpty(_model.LogoUrl))
+            {
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
+                    <div class="w-24 h-24 border border-gray-200 rounded-lg overflow-hidden">
+                        <img src="@_model.LogoUrl" alt="Logo preview" class="w-full h-full object-contain" 
+                             @onerror="HandleImageError" />
+                    </div>
+                </div>
+            }
+
+            <!-- Actions -->
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <a href="/admin/brands" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" disabled="@_isSubmitting"
+                        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (_isSubmitting)
+                    {
+                        <span class="inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>Create Brand</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private BrandFormModel _model = new();
+    private bool _isSubmitting;
+
+    private async Task HandleSubmit()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var command = new CreateBrandCommand
+            {
+                Name = _model.Name,
+                Slug = string.IsNullOrWhiteSpace(_model.Slug) ? null : _model.Slug,
+                LogoUrl = string.IsNullOrWhiteSpace(_model.LogoUrl) ? null : _model.LogoUrl
+            };
+
+            var result = await Mediator.Send(command);
+            if (result.IsSuccess)
+            {
+                Navigation.NavigateTo("/admin/brands");
+            }
+        }
+        catch (Exception ex)
+        {
+            // TODO: Show error toast
+            Console.WriteLine($"Error creating brand: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void HandleImageError()
+    {
+        // Image failed to load - could show error state
+    }
+
+    private class BrandFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Slug { get; set; }
+        public string? LogoUrl { get; set; }
+    }
+}
+

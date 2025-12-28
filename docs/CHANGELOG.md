@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 4: Brand Admin Pages (Date: 2025-12-28)
+
+**Added:**
+
+Blazor Admin Pages (src/Vendix.Web/Components/Pages/Admin/Brands/):
+- `Index.razor` - Brand list with table view, logo preview
+- `Create.razor` - Create new brand form with logo URL preview
+- `Edit.razor` - Edit existing brand form
+
+**Features:**
+- Table view with brand logo, name, slug, product count
+- Logo preview from URL (with fallback to initial letter)
+- Slug auto-generation option
+- Delete confirmation dialog
+- Loading states and error handling
+- Empty state with call-to-action
+- Form validation
+
+**Technical Decisions:**
+- Simpler structure than Category (no hierarchy/tree view needed)
+- Logo displayed from external URL (no file upload yet - Task 5)
+- Reused ConfirmDialog and LoadingSpinner shared components
+
+**Notes:**
+- TODO: Add error toast notifications for better UX
+- TODO: Replace LogoUrl text input with file upload component (Task 7)
+
+---
+
 ### Phase 2 - Task 3: Brand Commands & Queries (Date: 2025-12-28)
 
 **Added:**
