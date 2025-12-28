@@ -453,6 +453,7 @@ public class ProductsController : ControllerBase { }
 - [x] Category Commands & Queries
 - [x] Category Admin Pages
 - [x] Brand Commands & Queries
+- [x] Brand Admin Pages
 - [ ] Variants & Specs
 - [ ] Image upload
 - [ ] Caching
