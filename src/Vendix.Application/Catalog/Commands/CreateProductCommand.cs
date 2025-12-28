@@ -43,10 +43,10 @@ public sealed class CreateProductCommandHandler(
     /// <inheritdoc />
     public async Task<Result<Guid>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        // Check for duplicate SKU
-        var existingSku = await productRepository.GetBySlugAsync(
+        // Check for duplicate Slug
+        var existingBySlug = await productRepository.GetBySlugAsync(
             new Slug(request.Slug), cancellationToken);
-        if (existingSku is not null)
+        if (existingBySlug is not null)
         {
             throw new ConflictException("Product", "Slug", request.Slug);
         }

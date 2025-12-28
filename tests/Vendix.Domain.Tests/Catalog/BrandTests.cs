@@ -225,7 +225,8 @@ public class BrandTests
         var brand = CreateValidBrand();
 
         // Assert
-        brand.RowVersion.Should().NotBeNull();
+        // RowVersion is null for new entities and will be set by EF Core after save
+        brand.RowVersion.Should().BeNull();
     }
 
     [Fact]
