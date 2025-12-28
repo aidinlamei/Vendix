@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.Npgsql" Version="9.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Vendix.Infrastructure\Vendix.Infrastructure.csproj" />
   </ItemGroup>
 

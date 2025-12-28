@@ -25,6 +25,11 @@ public sealed partial class Slug : ValueObject
     public const int MaxLength = 200;
 
     /// <summary>
+    /// The regex pattern for validating slug format: lowercase letters, numbers, and hyphens only.
+    /// </summary>
+    public const string Pattern = @"^[a-z0-9\-]+$";
+
+    /// <summary>
     /// Gets the slug value.
     /// </summary>
     public string Value { get; }
