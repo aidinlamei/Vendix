@@ -42,6 +42,185 @@ Application Layer - Mappings:
 - TODO: Implement circular reference check in UpdateCategoryCommand
 - Category entity uses SetParentCategory method which already prevents self-reference
 - ICategoryRepository.GetBySlugAsync accepts string (not Slug value object)
+### Phase 2 - Core Catalog Started (Date: 2025-12-28)
+
+**Goals:**
+- Categories CRUD (Admin)
+- Brands CRUD (Admin)
+- Products CRUD (Admin) with image upload
+- Public catalog pages
+- Caching activation
+
+**Status:** In Progress ⏳
+
+---
+
+### Phase 1 - CLOSED ✅ (Date: 2025-12-28)
+
+**Summary:** Foundation phase completed successfully.
+
+**Delivered:**
+- ✅ Clean Architecture solution structure
+- ✅ Domain layer (Common, Catalog entities, Value Objects)
+- ✅ Application layer (CQRS, Pipeline Behaviors, Exceptions)
+- ✅ Infrastructure layer (EF Core, Repositories, Caching)
+- ✅ Basic Blazor layouts (Main, Admin)
+- ✅ Shared components (Toast, Pagination, LoadingSpinner, ConfirmDialog)
+- ✅ Unit tests foundation
+- ✅ 4 Critical bug fixes
+
+**Statistics:**
+- Files created: 113+
+- Domain entities: 10
+- Value objects: 3
+- Repository implementations: 3
+- Pipeline behaviors: 3 (Logging, Validation, Caching)
+- Shared components: 4
+
+**Next:** Phase 2 - Core Catalog
+
+---
+
+### Phase 1 - Critical Bug Fixes Review (Date: 2025-12-28)
+
+**Reviewed By:** Claude Code (AI Code Review)
+
+**Summary:** All 4 critical fixes requested in the Phase 1 bug report were successfully applied and verified.
+
+---
+
+#### Fix 1: Variable Name Bug in CreateProductCommand.cs ✅
+
+**File:** `src/Vendix.Application/Catalog/Commands/CreateProductCommand.cs:47-52`
+
+**Problem:** Variable named `existingSku` but actually checks for Slug duplicate - misleading name.
+
+**Before:**
+```csharp
+var existingSku = await productRepository.GetBySlugAsync(
+    new Slug(request.Slug), cancellationToken);
+if (existingSku is not null)
+{
+    throw new ConflictException("Product", "Slug", request.Slug);
+}
+```
+
+**After:**
+```csharp
+var existingBySlug = await productRepository.GetBySlugAsync(
+    new Slug(request.Slug), cancellationToken);
+if (existingBySlug is not null)
+{
+    throw new ConflictException("Product", "Slug", request.Slug);
+}
+```
+
+**Review:** Variable correctly renamed to `existingBySlug` to match its purpose (checking for slug duplicates).
+
+---
+
+#### Fix 2: Division by Zero in PaginatedList.cs ✅
+
+**File:** `src/Vendix.Application/Common/Models/PaginatedList.cs:54-71`
+
+**Problem:** If `pageSize` is 0, division by zero occurs in TotalPages calculation.
+
+**Before:**
+```csharp
+public PaginatedList(IReadOnlyList<T> items, int totalCount, int pageNumber, int pageSize)
+{
+    Items = items;
+    TotalCount = totalCount;
+    PageNumber = pageNumber;
+    PageSize = pageSize;
+    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize); // DivideByZero!
+}
+```
+
+**After:**
+```csharp
+public PaginatedList(IReadOnlyList<T> items, int totalCount, int pageNumber, int pageSize)
+{
+    if (pageSize <= 0)
+    {
+        throw new ArgumentException("Page size must be greater than zero.", nameof(pageSize));
+    }
+
+    if (pageNumber <= 0)
+    {
+        throw new ArgumentException("Page number must be greater than zero.", nameof(pageNumber));
+    }
+
+    Items = items;
+    TotalCount = totalCount;
+    PageNumber = pageNumber;
+    PageSize = pageSize;
+    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+}
+```
+
+**Review:** Guard clauses added for both `pageSize` and `pageNumber` with descriptive `ArgumentException` messages. Follows fail-fast principle.
+
+---
+
+#### Fix 3: MarkAsDeleted() Not Setting DeletedBy ✅
+
+**Files:**
+- `src/Vendix.Domain/Catalog/Entities/Brand.cs:116-121`
+- `src/Vendix.Domain/Catalog/Entities/Category.cs:207-212`
+- `src/Vendix.Domain/Catalog/Entities/Product.cs:470-475`
+
+**Problem:** `MarkAsDeleted()` only sets `IsDeleted` and `DeletedAt`, but `DeletedBy` was left for interceptor. This creates inconsistency if called outside EF context.
+
+**Before (all 3 files):**
+```csharp
+public void MarkAsDeleted()
+{
+    IsDeleted = true;
+    DeletedAt = DateTime.UtcNow;
+}
+```
+
+**After (all 3 files):**
+```csharp
+public void MarkAsDeleted(string? deletedBy = null)
+{
+    IsDeleted = true;
+    DeletedAt = DateTime.UtcNow;
+    DeletedBy = deletedBy;
+}
+```
+
+**Review:** Optional `deletedBy` parameter added to all 3 entities. Maintains backward compatibility (parameter is optional) while allowing explicit user tracking when called outside EF context.
+
+---
+
+#### Fix 4: RowVersion Empty Array Initialization ✅
+
+**File:** `src/Vendix.Domain/Common/AggregateRoot.cs:32`
+
+**Problem:** `RowVersion` initialized with empty array `[]`, but EF Core expects `null` for new entities.
+
+**Before:**
+```csharp
+public byte[] RowVersion { get; set; } = [];
+```
+
+**After:**
+```csharp
+public byte[] RowVersion { get; set; } = null!;
+```
+
+**Review:** Changed to `null!` (null-forgiving operator) to let EF Core handle RowVersion initialization. The `!` suppresses nullable warning since EF Core will always populate this value.
+
+---
+
+**Verification Status:**
+- [x] All 4 fixes verified in source code
+- [ ] `dotnet build` - Not tested (dotnet not available in review environment)
+- [ ] `dotnet test` - Not tested (dotnet not available in review environment)
+
+**Recommendation:** Run `dotnet build && dotnet test` locally to confirm all tests pass.
 
 ---
 

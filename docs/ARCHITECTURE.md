@@ -1,8 +1,8 @@
 # Vendix - Architecture Document
 
-> **Version:** 2.0.0  
-> **Last Updated:** 2025-12-27  
-> **Status:** Phase 1 - Foundation  
+> **Version:** 2.1.0
+> **Last Updated:** 2025-12-28
+> **Status:** Phase 2 - Core Catalog
 > **.NET Version:** 10.0 LTS (Supported until November 2028)
 
 ---
@@ -439,15 +439,16 @@ public class ProductsController : ControllerBase { }
 
 ## 14. Implementation Phases
 
-### Phase 1: Foundation ⏳ (Current)
+### Phase 1: Foundation ✅ (Completed: 2025-12-28)
 - [x] Architecture document
-- [ ] Solution structure
-- [ ] Domain entities (Common, Catalog basics)
-- [ ] Base infrastructure (DbContext, Identity)
-- [ ] Basic Blazor layout
-- [ ] Unit tests setup
+- [x] Solution structure
+- [x] Domain entities (Common, Catalog basics)
+- [x] Base infrastructure (DbContext, Identity)
+- [x] Basic Blazor layout
+- [x] Unit tests setup
+- [x] Critical bug fixes (4 items)
 
-### Phase 2: Core Catalog
+### Phase 2: Core Catalog ⏳ (Current)
 - [ ] Products CRUD (with translations)
 - [x] Category Commands & Queries
 - [ ] Variants & Specs
@@ -523,6 +524,172 @@ docs: update API documentation
 
 ---
 
+## 17. Phase 2: Core Catalog - Detailed Architecture
+
+### 17.1 Products CRUD (Admin Panel)
+
+**Pages to Create:**
+```
+src/Vendix.Web/Components/Pages/Admin/Products/
+├── Index.razor          # Product list with search, filter, pagination
+├── Create.razor         # Create new product form
+├── Edit.razor           # Edit existing product
+└── _ProductForm.razor   # Shared form component
+```
+
+**Features:**
+- DataGrid with sorting, filtering, search
+- Multi-language support (FA/EN) for title & description
+- Image upload with drag & drop
+- Variant management inline
+- Specification key-value editor
+- SEO fields (slug, meta)
+
+**API Endpoints:**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/v1/admin/products | List with pagination |
+| GET | /api/v1/admin/products/{id} | Get by ID |
+| POST | /api/v1/admin/products | Create |
+| PUT | /api/v1/admin/products/{id} | Update |
+| DELETE | /api/v1/admin/products/{id} | Soft delete |
+
+---
+
+### 17.2 Categories CRUD
+
+**Pages:**
+```
+src/Vendix.Web/Components/Pages/Admin/Categories/
+├── Index.razor          # Tree view of categories
+├── Create.razor         # Create category
+└── Edit.razor           # Edit category
+```
+
+**Features:**
+- Hierarchical tree view
+- Drag & drop reordering (future)
+- Parent category selection
+- Multi-language name & description
+- Slug auto-generation
+
+**Commands & Queries to Add:**
+- CreateCategoryCommand
+- UpdateCategoryCommand
+- DeleteCategoryCommand
+- GetCategoriesQuery (tree structure)
+- GetCategoryByIdQuery
+
+---
+
+### 17.3 Brands CRUD
+
+**Pages:**
+```
+src/Vendix.Web/Components/Pages/Admin/Brands/
+├── Index.razor
+├── Create.razor
+└── Edit.razor
+```
+
+**Features:**
+- Simple list view
+- Logo upload
+- Slug auto-generation
+
+**Commands & Queries to Add:**
+- CreateBrandCommand
+- UpdateBrandCommand
+- DeleteBrandCommand
+- GetBrandsQuery
+- GetBrandByIdQuery
+
+---
+
+### 17.4 Image Upload
+
+**Interface:**
+```csharp
+public interface IFileStorage
+{
+    Task<string> UploadAsync(Stream file, string fileName, string folder, CancellationToken ct = default);
+    Task DeleteAsync(string path, CancellationToken ct = default);
+    string GetPublicUrl(string path);
+}
+```
+
+**Implementation:** LocalFileStorage (Phase 2)
+
+**Location:** `wwwroot/uploads/{folder}/{guid}_{filename}`
+
+**Validation:**
+- Max size: 5MB
+- Allowed types: jpg, jpeg, png, webp
+- Image optimization (resize to max 1200px)
+
+---
+
+### 17.5 Caching Activation
+
+**Queries to Mark Cacheable:**
+```csharp
+[CacheableQuery(Key = CacheKeys.Products, ExpiryMinutes = 5)]
+public record GetProductsQuery(...) : IRequest<PaginatedList<ProductListDto>>;
+
+[CacheableQuery(Key = CacheKeys.Categories, ExpiryMinutes = 30)]
+public record GetCategoriesQuery() : IRequest<List<CategoryDto>>;
+
+[CacheableQuery(Key = CacheKeys.Brands, ExpiryMinutes = 30)]
+public record GetBrandsQuery() : IRequest<List<BrandDto>>;
+```
+
+**Cache Invalidation:**
+- On Create/Update/Delete → RemoveByPrefixAsync(prefix)
+- Product change → Invalidate Products cache
+- Category change → Invalidate Categories cache
+- Brand change → Invalidate Brands cache
+
+---
+
+### 17.6 Public Catalog Pages
+
+**Pages:**
+```
+src/Vendix.Web/Components/Pages/Catalog/
+├── Products.razor       # Product listing with filters
+├── ProductDetail.razor  # Single product view
+└── Category.razor       # Products by category
+```
+
+**Features:**
+- Responsive product grid
+- Filter by category, brand, price range
+- Sort by price, name, newest
+- Product detail with image gallery
+- Variant selection
+- Add to cart button (UI only, Phase 3)
+
+---
+
+### Phase 2 Checklist
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | Category Commands & Queries | ⬜ |
+| 2 | Category Admin Pages | ⬜ |
+| 3 | Brand Commands & Queries | ⬜ |
+| 4 | Brand Admin Pages | ⬜ |
+| 5 | LocalFileStorage Implementation | ⬜ |
+| 6 | Product Admin Pages (Index, Create, Edit) | ⬜ |
+| 7 | Image Upload Component | ⬜ |
+| 8 | Cache Activation on Queries | ⬜ |
+| 9 | Public Products Page | ⬜ |
+| 10 | Public Product Detail Page | ⬜ |
+| 11 | Public Category Page | ⬜ |
+| 12 | Unit & Integration Tests | ⬜ |
+
+---
+
 ## Appendix: Config Files
 
 **global.json:**
@@ -547,5 +714,5 @@ docs: update API documentation
 
 ---
 
-*Single source of truth for Vendix architecture.*  
-*Last Updated: 2025-12-27 by Claude Opus*
+*Single source of truth for Vendix architecture.*
+*Last Updated: 2025-12-28 by Claude Opus*
