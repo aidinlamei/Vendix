@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 2: Category Admin Pages (Date: 2025-12-28)
+
+**Added:**
+
+Blazor Admin Pages (src/Vendix.Web/Components/Pages/Admin/Categories/):
+- `Index.razor` - Category list with hierarchical tree view
+- `CategoryTreeNode.razor` - Recursive tree node component
+- `Create.razor` - Create new category form
+- `Edit.razor` - Edit existing category form
+
+**Features:**
+- Hierarchical tree view with expand/collapse functionality
+- Parent category selection (prevents self-reference)
+- Multi-language translations support (EN/FA)
+- Slug auto-generation option
+- Delete confirmation dialog
+- Loading states and error handling
+- Empty state with call-to-action
+
+**Technical Decisions:**
+- Used recursive CategoryTreeNode component for tree rendering
+- FlattenTree helper method for parent category dropdown
+- ConfirmDialog component for delete confirmation
+- LoadingSpinner component for async operations
+- Form validation using DataAnnotationsValidator
+
+**Notes:**
+- TODO: Add error toast notifications for better UX
+- Category description stored in translations, not directly on entity
+- Parent category dropdown excludes current category in edit mode
+
+---
+
 ### Phase 2 - Task 1: Category Commands & Queries (Date: 2025-12-28)
 
 **Added:**

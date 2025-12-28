@@ -1,0 +1,302 @@
+@page "/admin/categories/edit/{Id:guid}"
+@layout AdminLayout
+
+@using MediatR
+@using Vendix.Application.Catalog.Commands
+@using Vendix.Application.Catalog.DTOs
+@using Vendix.Application.Catalog.Queries
+@using Vendix.Web.Components.Shared
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Category - Vendix Admin</PageTitle>
+
+@if (_isLoading)
+{
+    <div class="flex justify-center py-12">
+        <LoadingSpinner Size="large" Text="Loading category..." />
+    </div>
+}
+else if (_category is null)
+{
+    <div class="text-center py-12">
+        <h2 class="text-xl font-medium text-gray-900">Category not found</h2>
+        <a href="/admin/categories" class="text-primary-600 hover:text-primary-700 mt-4 inline-block">
+            Back to Categories
+        </a>
+    </div>
+}
+else
+{
+    <div class="max-w-3xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="flex items-center space-x-4">
+            <a href="/admin/categories" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Category</h1>
+                <p class="text-gray-600 mt-1">Update @_category.Name</p>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow">
+            <EditForm Model="_model" OnValidSubmit="HandleSubmit" class="divide-y divide-gray-200">
+                <DataAnnotationsValidator />
+
+                <!-- Basic Info -->
+                <div class="p-6 space-y-6">
+                    <h2 class="text-lg font-medium text-gray-900">Basic Information</h2>
+
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                            Name <span class="text-red-500">*</span>
+                        </label>
+                        <InputText id="name" @bind-Value="_model.Name" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                        <ValidationMessage For="() => _model.Name" class="text-red-500 text-sm mt-1" />
+                    </div>
+
+                    <!-- Slug -->
+                    <div>
+                        <label for="slug" class="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                        <div class="flex items-center">
+                            <span class="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500">/</span>
+                            <InputText id="slug" @bind-Value="_model.Slug" 
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                        </div>
+                    </div>
+
+                    <!-- Parent Category -->
+                    <div>
+                        <label for="parent" class="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
+                        <InputSelect id="parent" @bind-Value="_model.ParentId" 
+                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="">None (Root Category)</option>
+                            @foreach (var category in _parentCategories.Where(c => c.Id != Id))
+                            {
+                                <option value="@category.Id">@GetIndentedName(category)</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <InputTextArea id="description" @bind-Value="_model.Description" rows="3"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                    </div>
+                </div>
+
+                <!-- Translations -->
+                <div class="p-6 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-gray-900">Translations</h2>
+                        <button type="button" @onclick="AddTranslation" 
+                                class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                            + Add Translation
+                        </button>
+                    </div>
+
+                    @if (_model.Translations.Count == 0)
+                    {
+                        <p class="text-sm text-gray-500">No translations added.</p>
+                    }
+                    else
+                    {
+                        <div class="space-y-4">
+                            @for (int i = 0; i < _model.Translations.Count; i++)
+                            {
+                                var index = i;
+                                <div class="p-4 bg-gray-50 rounded-lg space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <InputSelect @bind-Value="_model.Translations[index].LanguageCode"
+                                                     class="px-3 py-1 border border-gray-300 rounded-lg text-sm">
+                                            <option value="en">English</option>
+                                            <option value="fa">فارسی (Persian)</option>
+                                        </InputSelect>
+                                        <button type="button" @onclick="() => RemoveTranslation(index)"
+                                                class="text-red-500 hover:text-red-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <InputText @bind-Value="_model.Translations[index].Name" 
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                               placeholder="Translated name" />
+                                    <InputTextArea @bind-Value="_model.Translations[index].Description" rows="2"
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                                   placeholder="Translated description" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Actions -->
+                <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                    <a href="/admin/categories" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit" disabled="@_isSubmitting"
+                            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        @if (_isSubmitting)
+                        {
+                            <span class="inline-flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Saving...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private CategoryDto? _category;
+    private CategoryFormModel _model = new();
+    private List<CategoryTreeDto> _parentCategories = [];
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategory();
+        await LoadParentCategories();
+    }
+
+    private async Task LoadCategory()
+    {
+        _isLoading = true;
+        try
+        {
+            _category = await Mediator.Send(new GetCategoryByIdQuery(Id));
+            if (_category is not null)
+            {
+                _model = new CategoryFormModel
+                {
+                    Name = _category.Name,
+                    Slug = _category.Slug,
+                    Description = _category.Description,
+                    ParentId = _category.ParentId,
+                    Translations = _category.Translations.Select(t => new TranslationModel
+                    {
+                        LanguageCode = t.LanguageCode,
+                        Name = t.Name,
+                        Description = t.Description
+                    }).ToList()
+                };
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadParentCategories()
+    {
+        var tree = await Mediator.Send(new GetCategoryTreeQuery());
+        _parentCategories = FlattenTree(tree);
+    }
+
+    private List<CategoryTreeDto> FlattenTree(List<CategoryTreeDto> categories, int level = 0)
+    {
+        var result = new List<CategoryTreeDto>();
+        foreach (var cat in categories)
+        {
+            result.Add(cat with { Level = level });
+            if (cat.Children.Count > 0)
+            {
+                result.AddRange(FlattenTree(cat.Children, level + 1));
+            }
+        }
+        return result;
+    }
+
+    private string GetIndentedName(CategoryTreeDto category)
+    {
+        return new string('—', category.Level) + (category.Level > 0 ? " " : "") + category.Name;
+    }
+
+    private void AddTranslation()
+    {
+        _model.Translations.Add(new TranslationModel { LanguageCode = "fa" });
+    }
+
+    private void RemoveTranslation(int index)
+    {
+        _model.Translations.RemoveAt(index);
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var command = new UpdateCategoryCommand
+            {
+                Id = Id,
+                Name = _model.Name,
+                Slug = _model.Slug,
+                Description = _model.Description,
+                ParentId = _model.ParentId,
+                Translations = _model.Translations.Select(t => new CategoryTranslationInput
+                {
+                    LanguageCode = t.LanguageCode,
+                    Name = t.Name,
+                    Description = t.Description
+                }).ToList()
+            };
+
+            var result = await Mediator.Send(command);
+            if (result.IsSuccess)
+            {
+                Navigation.NavigateTo("/admin/categories");
+            }
+        }
+        catch (Exception ex)
+        {
+            // TODO: Show error toast
+            Console.WriteLine($"Error updating category: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private class CategoryFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Slug { get; set; }
+        public string? Description { get; set; }
+        public Guid? ParentId { get; set; }
+        public List<TranslationModel> Translations { get; set; } = [];
+    }
+
+    private class TranslationModel
+    {
+        public string LanguageCode { get; set; } = "en";
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+}
+
