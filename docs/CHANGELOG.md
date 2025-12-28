@@ -461,3 +461,177 @@ Tests:
 - Step 1.5: Set up DbContext and base infrastructure
 
 ---
+### Phase 1 - Remaining Fixes (Date: 2025-12-28)
+
+**Added:**
+
+Caching Infrastructure:
+- `ICacheService.cs` - Cache service interface with methods:
+  - GetAsync<T>, SetAsync<T>, RemoveAsync, RemoveByPrefixAsync
+  - GetOrCreateAsync<T> for cache-aside pattern
+
+- `MemoryCacheService.cs` - IMemoryCache implementation:
+  - Configurable default expiration
+  - Key tracking for prefix-based invalidation
+  - Logging of cache hits/misses
+
+- `CacheKeys.cs` - Static class with cache key constants:
+  - Products, Categories, Brands prefixes
+  - Helper methods for generating consistent keys
+  - Default TTL constants (Products: 5min, Categories: 30min)
+
+- `CacheableQueryAttribute.cs` - Attribute for marking cacheable queries:
+  - Key property for custom cache keys
+  - ExpiryMinutes for custom expiration
+  - BypassCache for runtime cache bypass
+
+- `CachingBehavior.cs` - MediatR pipeline behavior:
+  - Auto-caches queries with CacheableQuery attribute
+  - Generates cache keys from request properties
+  - Logs cache hits/misses
+
+API Rate Limiting:
+- Global rate limiter (100 requests/minute per user/IP)
+- Auth-specific policy (10 requests/minute)
+- Search-specific policy (30 requests/minute)
+- Custom 429 response with retry-after header
+
+Domain Improvements:
+- `FinalPriceResult.cs` - Record type for price calculation results:
+  - Price: The calculated final price
+  - WasClampedToZero: Indicates negative price was clamped
+
+Tests:
+- `ProductVariantPriceTests.cs` - Tests for GetFinalPriceWithInfo:
+  - Positive/negative/zero adjustments
+  - Clamping behavior when result is negative
+  - Currency mismatch handling
+  - Backward compatibility with GetFinalPrice
+
+**Fixed:**
+
+ProductVariant.GetFinalPrice Warning Issue:
+- Added `GetFinalPriceWithInfo()` method returning `FinalPriceResult`
+- Result includes `WasClampedToZero` flag for callers to log warnings
+- Original `GetFinalPrice()` maintained for backward compatibility
+
+N+1 Query in ProductRepository.SearchAsync:
+- Removed unnecessary Includes (Variants, Specifications, Translations)
+- Now only includes Images.Where(i => i.IsMain) for list view
+- Added Category and Brand includes for display
+- Added AsSplitQuery() for better performance
+- Added OrderByDescending(CreatedAt) for consistent ordering
+
+**Updated:**
+
+DependencyInjection (Application):
+- Added CachingBehavior to MediatR pipeline
+- Pipeline order: Logging → Validation → Caching → Handler
+
+DependencyInjection (Infrastructure):
+- Added IMemoryCache registration
+- Added CacheSettings configuration
+- Added ICacheService → MemoryCacheService registration
+
+Program.cs (API):
+- Added Rate Limiting middleware
+- Configured global and policy-specific rate limits
+- Added custom 429 response handler
+
+**Technical Decisions:**
+- FinalPriceResult uses record type for immutability and value semantics
+- Cache key generation uses JSON serialization with hash for uniqueness
+- Rate limiting uses FixedWindowLimiter for simplicity and predictability
+- Search query only loads main image for performance (N+1 fix)
+- CachingBehavior checks for null response before caching
+
+---
+
+### Phase 1 - Core Models and CRUD Implementation (Date: 2025-12-27)
+
+**Added:**
+
+Application Layer - Core Models (src/Vendix.Application/Common/Models/):
+- `Result.cs` - Result pattern implementation
+- `PaginatedList.cs` - Paginated list for query results
+
+Application Layer - Custom Exceptions (src/Vendix.Application/Common/Exceptions/):
+- `NotFoundException.cs` - For entity not found scenarios
+- `ValidationException.cs` - For FluentValidation failures
+- `BusinessRuleException.cs` - For domain rule violations
+- `ConflictException.cs` - For duplicate entries
+
+Application Layer - Pipeline Behaviors (src/Vendix.Application/Common/Behaviors/):
+- `ValidationBehavior.cs` - MediatR pipeline behavior for validation
+- `LoggingBehavior.cs` - MediatR pipeline behavior for logging
+
+Application Layer - Services (src/Vendix.Application/Common/Interfaces/):
+- `ICurrentUserService.cs` - Interface for current user information
+
+Application Layer - Product CRUD (src/Vendix.Application/Catalog/):
+- DTOs, Commands, Queries, Mappings for Product management
+
+Infrastructure Layer - Identity:
+- `CurrentUserService.cs` - ICurrentUserService implementation
+
+Domain Layer - Concurrency:
+- `AggregateRoot.cs` - Added RowVersion property
+
+**Technical Decisions:**
+- Result pattern provides functional error handling
+- Pipeline behaviors centralize cross-cutting concerns
+- RowVersion uses byte[] for database-agnostic concurrency tokens
+
+---
+
+### Phase 1 Fixes and Completions (Date: 2025-12-27)
+
+**Fixed:**
+- `Toast.razor` - Added `@implements IDisposable` for proper timer cleanup
+- `LoadingSpinner.razor` - Changed invalid `border-3` to `border-2`
+- `CategoryConfiguration.cs` - Changed DeleteBehavior to SetNull
+
+**Added:**
+- `IBrandRepository.cs` - Repository interface for Brand
+- Repository implementations (Product, Category, Brand)
+- Domain tests (Sku, Slug, Category)
+
+---
+
+### Step 1.5 - Blazor Layout Components (Date: 2025-12-27)
+
+**Added:**
+- Tailwind CSS integration with custom brand colors
+- Layout Components (MainLayout, AdminLayout)
+- Shared Components (LoadingSpinner, Toast, ConfirmDialog, Pagination)
+- Home page with hero, features, products sections
+- Admin Dashboard with stats, orders, quick actions
+
+---
+
+### Step 1.4 - Infrastructure Layer (Date: 2025-12-27)
+
+**Added:**
+- VendixDbContext with all entity configurations
+- UnitOfWork implementation
+- AuditableEntityInterceptor
+- DateTimeProvider service
+
+---
+
+### Step 1.3 - Catalog Domain Entities (Date: 2025-12-27)
+
+**Added:**
+- Value Objects (Money, Sku, Slug)
+- Entities (Product, Category, Brand, ProductVariant, etc.)
+- Repository interfaces
+
+---
+
+### Step 1.2 - Domain/Common (Date: 2025-12-27)
+
+**Added:**
+- BaseEntity, AggregateRoot, ValueObject base classes
+- IAuditableEntity, ISoftDelete interfaces
+- IRepository generic interface
+- Domain event infrastructure
