@@ -452,6 +452,7 @@ public class ProductsController : ControllerBase { }
 - [ ] Products CRUD (with translations)
 - [x] Category Commands & Queries
 - [x] Category Admin Pages
+- [x] Brand Commands & Queries
 - [ ] Variants & Specs
 - [ ] Image upload
 - [ ] Caching

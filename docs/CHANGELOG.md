@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 3: Brand Commands & Queries (Date: 2025-12-28)
+
+**Added:**
+
+Application Layer - Brand DTOs:
+- `BrandDto.cs` - Detail view DTO
+- `BrandListDto.cs` - Lightweight DTO for lists
+- `BrandSelectDto.cs` - DTO for dropdown selection
+
+Application Layer - Brand Commands:
+- `CreateBrandCommand.cs` - Create brand with logo URL
+- `CreateBrandCommandValidator.cs` - Validation with URL check
+- `UpdateBrandCommand.cs` - Update brand details
+- `UpdateBrandCommandValidator.cs` - Validation rules
+- `DeleteBrandCommand.cs` - Soft delete with product check
+
+Application Layer - Brand Queries:
+- `GetBrandByIdQuery.cs` - Get single brand by ID
+- `GetBrandBySlugQuery.cs` - Get single brand by slug
+- `GetBrandsQuery.cs` - Get all brands (cached)
+
+Application Layer - Mappings:
+- `BrandMappingConfig.cs` - Mapster configuration for Brand
+
+Domain/Infrastructure:
+- `IProductRepository.GetByBrandAsync` - Get products by brand ID
+- `ProductRepository.GetByBrandAsync` - Implementation
+
+**Technical Decisions:**
+- Used URL validation in validators to ensure LogoUrl is a valid HTTP/HTTPS URL
+- DeleteBrandCommand checks for associated products before allowing deletion
+- ProductCount in DTOs set to 0 (TODO: implement via repository)
+- Used string literal for cache key "brands" to avoid Application->Infrastructure dependency
+
+**Notes:**
+- TODO: Implement ProductCount calculation in BrandMappingConfig
+- Brand entity uses UpdateLogoUrl method which accepts null to remove logo
+- IProductRepository.GetByBrandAsync added for brand deletion validation
+
+---
+
 ### Phase 2 - Task 2: Category Admin Pages (Date: 2025-12-28)
 
 **Added:**

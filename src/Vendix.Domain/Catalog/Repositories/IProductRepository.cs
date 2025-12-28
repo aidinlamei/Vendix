@@ -29,6 +29,14 @@ public interface IProductRepository : IRepository<Product>
     Task<IReadOnlyList<Product>> GetByCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets products belonging to a specific brand.
+    /// </summary>
+    /// <param name="brandId">The brand ID to filter by.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A list of products for the specified brand.</returns>
+    Task<IReadOnlyList<Product>> GetByBrandAsync(Guid brandId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Searches for products matching the specified criteria.
     /// </summary>
     /// <param name="searchTerm">Optional search term to match against name and description.</param>
