@@ -23,6 +23,11 @@ public sealed partial class Sku : ValueObject
     public const int MaxLength = 50;
 
     /// <summary>
+    /// The regex pattern for validating SKU format: alphanumeric and hyphens only.
+    /// </summary>
+    public const string Pattern = @"^[A-Za-z0-9\-]+$";
+
+    /// <summary>
     /// Gets the SKU value.
     /// </summary>
     public string Value { get; }

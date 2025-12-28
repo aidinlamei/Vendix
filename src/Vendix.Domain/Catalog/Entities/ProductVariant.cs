@@ -4,13 +4,6 @@ using Vendix.Domain.Common;
 namespace Vendix.Domain.Catalog.Entities;
 
 /// <summary>
-/// Represents the result of calculating a product variant's final price.
-/// </summary>
-/// <param name="Price">The final price for the variant.</param>
-/// <param name="WasClampedToZero">Indicates whether the price was clamped to zero due to a negative calculation result.</param>
-public sealed record FinalPriceResult(Money Price, bool WasClampedToZero);
-
-/// <summary>
 /// Represents a variant of a product with its own SKU, price adjustment, and stock.
 /// </summary>
 /// <remarks>
