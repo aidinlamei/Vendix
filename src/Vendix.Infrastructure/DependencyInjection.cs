@@ -34,6 +34,10 @@ public static class DependencyInjection
         // Register HttpContextAccessor for ICurrentUserService
         services.AddHttpContextAccessor();
 
+        // Register caching services
+        services.AddMemoryCache();
+        services.AddScoped<ICacheService, MemoryCacheService>();
+
         // Register services
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

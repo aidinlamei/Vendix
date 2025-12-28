@@ -96,6 +96,9 @@ var app = builder.Build();
 // Register exception handling middleware first
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Enable rate limiting
+app.UseRateLimiter();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
