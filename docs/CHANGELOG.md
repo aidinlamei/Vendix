@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 1: Category Commands & Queries (Date: 2025-12-28)
+
+**Added:**
+
+Application Layer - Category DTOs:
+- `CategoryDto.cs` - Detail view DTO with translations and children
+- `CategoryListDto.cs` - Lightweight DTO for lists
+- `CategoryTranslationDto.cs` - Translation DTO
+- `CategoryTreeDto.cs` - Hierarchical tree structure DTO
+
+Application Layer - Category Commands:
+- `CreateCategoryCommand.cs` - Create category with translations
+- `CreateCategoryCommandValidator.cs` - Validation rules
+- `UpdateCategoryCommand.cs` - Update category details
+- `UpdateCategoryCommandValidator.cs` - Validation rules
+- `DeleteCategoryCommand.cs` - Soft delete category
+
+Application Layer - Category Queries:
+- `GetCategoryByIdQuery.cs` - Get single category by ID
+- `GetCategoryBySlugQuery.cs` - Get single category by slug
+- `GetCategoriesQuery.cs` - Get root categories list (cached)
+- `GetCategoryTreeQuery.cs` - Get full category hierarchy (cached)
+
+Application Layer - Mappings:
+- `CategoryMappingConfig.cs` - Mapster configuration for Category
+
+**Technical Decisions:**
+- Used string literals for cache keys instead of CacheKeys class to avoid Application layer dependency on Infrastructure
+- Category entity doesn't have Description property, so Description is stored in CategoryTranslation
+- Translations are replaced entirely on update (remove all, add new ones)
+- If Description is provided but no translations, it's added to default "en" translation
+
+**Notes:**
+- TODO: Implement circular reference check in UpdateCategoryCommand
+- Category entity uses SetParentCategory method which already prevents self-reference
+- ICategoryRepository.GetBySlugAsync accepts string (not Slug value object)
+
+---
+
 ### Phase 1 - Core Models and CRUD Implementation (Date: 2025-12-27)
 
 **Added:**
