@@ -450,7 +450,7 @@ public class ProductsController : ControllerBase { }
 
 ### Phase 2: Core Catalog ⏳ (Current)
 - [ ] Products CRUD (with translations)
-- [ ] Categories
+- [x] Category Commands & Queries
 - [ ] Variants & Specs
 - [ ] Image upload
 - [ ] Caching
