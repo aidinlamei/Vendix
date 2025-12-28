@@ -34,9 +34,10 @@ public interface ISoftDelete
     /// <summary>
     /// Marks this entity as deleted.
     /// </summary>
+    /// <param name="deletedBy">Optional identifier of the user who deleted this entity.</param>
     /// <remarks>
     /// Sets the IsDeleted flag to true and records the deletion timestamp.
-    /// The DeletedBy property will be set automatically by the soft delete interceptor.
+    /// If deletedBy is provided, it will be set; otherwise, it may be set automatically by the soft delete interceptor.
     /// </remarks>
-    void MarkAsDeleted();
+    void MarkAsDeleted(string? deletedBy = null);
 }

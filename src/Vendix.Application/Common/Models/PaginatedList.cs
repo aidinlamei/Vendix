@@ -50,8 +50,19 @@ public class PaginatedList<T>
     /// <param name="totalCount">The total count of items across all pages.</param>
     /// <param name="pageNumber">The current page number (1-based).</param>
     /// <param name="pageSize">The page size.</param>
+    /// <exception cref="ArgumentException">Thrown when pageSize or pageNumber is less than or equal to zero.</exception>
     public PaginatedList(IReadOnlyList<T> items, int totalCount, int pageNumber, int pageSize)
     {
+        if (pageSize <= 0)
+        {
+            throw new ArgumentException("Page size must be greater than zero.", nameof(pageSize));
+        }
+
+        if (pageNumber <= 0)
+        {
+            throw new ArgumentException("Page number must be greater than zero.", nameof(pageNumber));
+        }
+
         Items = items;
         TotalCount = totalCount;
         PageNumber = pageNumber;

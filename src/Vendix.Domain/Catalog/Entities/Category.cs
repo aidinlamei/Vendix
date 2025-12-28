@@ -204,10 +204,11 @@ public class Category : AggregateRoot, IAuditableEntity, ISoftDelete
     }
 
     /// <inheritdoc />
-    public void MarkAsDeleted()
+    public void MarkAsDeleted(string? deletedBy = null)
     {
         IsDeleted = true;
         DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
     }
 
     private void SetName(string name)
