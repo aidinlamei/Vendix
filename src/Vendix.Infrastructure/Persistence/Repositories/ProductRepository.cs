@@ -70,6 +70,21 @@ public class ProductRepository : IProductRepository
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Product>> GetByBrandAsync(
+        Guid brandId,
+        CancellationToken cancellationToken = default)
+    {
+        // Minimal includes for list view - only main image needed
+        return await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Images.Where(i => i.IsMain))
+            .Include(p => p.Category)
+            .Include(p => p.Brand)
+            .Where(p => p.BrandId == brandId)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<(IReadOnlyList<Product> Items, int TotalCount)> SearchAsync(
         string? searchTerm = null,
         Guid? categoryId = null,
