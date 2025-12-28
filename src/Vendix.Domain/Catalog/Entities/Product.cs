@@ -466,6 +466,13 @@ public class Product : AggregateRoot, IAuditableEntity, ISoftDelete
         return _images.FirstOrDefault(i => i.IsMain);
     }
 
+    /// <inheritdoc />
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+    }
+
     private void SetName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

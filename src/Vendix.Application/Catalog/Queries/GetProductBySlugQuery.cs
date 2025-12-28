@@ -1,3 +1,4 @@
+using FluentValidation;
 using MapsterMapper;
 using MediatR;
 using Vendix.Application.Catalog.DTOs;
@@ -34,5 +35,27 @@ public sealed class GetProductBySlugQueryHandler(
 
         var dto = mapper.Map<ProductDto>(product);
         return Result<ProductDto>.Success(dto);
+    }
+}
+
+/// <summary>
+/// Validator for <see cref="GetProductBySlugQuery"/>.
+/// </summary>
+public sealed class GetProductBySlugQueryValidator : AbstractValidator<GetProductBySlugQuery>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetProductBySlugQueryValidator"/> class.
+    /// </summary>
+    public GetProductBySlugQueryValidator()
+    {
+        RuleFor(x => x.Slug)
+            .NotEmpty()
+            .WithMessage("Slug is required.")
+            .MinimumLength(Slug.MinLength)
+            .WithMessage($"Slug must be at least {Slug.MinLength} characters.")
+            .MaximumLength(Slug.MaxLength)
+            .WithMessage($"Slug cannot exceed {Slug.MaxLength} characters.")
+            .Must(Slug.IsValid)
+            .WithMessage("Slug must be in a valid format (lowercase letters, numbers, and hyphens only).");
     }
 }

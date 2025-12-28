@@ -28,8 +28,8 @@ public sealed class DeleteProductCommandHandler(
             throw NotFoundException.ForEntity<Domain.Catalog.Entities.Product>(request.Id);
         }
 
-        // Soft delete by setting IsDeleted = true
-        product.IsDeleted = true;
+        // Soft delete the product
+        product.MarkAsDeleted();
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(cancellationToken);

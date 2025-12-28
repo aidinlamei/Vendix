@@ -61,12 +61,14 @@ public class ProductRepository : IProductRepository
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<Product>> SearchAsync(
+    public async Task<(IReadOnlyList<Product> Items, int TotalCount)> SearchAsync(
         string? searchTerm = null,
         Guid? categoryId = null,
         Guid? brandId = null,
         decimal? minPrice = null,
         decimal? maxPrice = null,
+        int pageNumber = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Products
@@ -105,7 +107,16 @@ public class ProductRepository : IProductRepository
             query = query.Where(p => p.Price.Amount <= maxPrice.Value);
         }
 
-        return await query.ToListAsync(cancellationToken);
+        // Get total count before pagination
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Apply pagination
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     /// <inheritdoc />
