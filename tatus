@@ -1,0 +1,22 @@
+*   [33mb96e7dc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfix/build-errors-and-net10-support[m[33m, [m[1;31morigin/fix/build-errors-and-net10-support[m[33m)[m Merge branch 'main' into fix/build-errors-and-net10-support
+[31m|[m[32m\[m  
+[31m|[m *   [33maee0c8a[m Merge pull request #14 from aidinlamei/claude/update-architecture-docs-czXys
+[31m|[m [33m|[m[34m\[m  
+[31m|[m [33m|[m * [33mc0bc660[m[33m ([m[1;31morigin/claude/update-architecture-docs-czXys[m[33m)[m docs: Close Phase 1 and add Phase 2 architecture details
+[31m|[m [33m|[m[33m/[m  
+[31m|[m *   [33m1cfdd87[m Merge pull request #13 from aidinlamei/claude/fix-createproduct-variable-6jZ1y
+[31m|[m [35m|[m[36m\[m  
+[31m|[m [35m|[m * [33m32a8f10[m[33m ([m[1;31morigin/claude/fix-createproduct-variable-6jZ1y[m[33m)[m docs: Add Phase 1 critical bug fixes review to CHANGELOG
+[31m|[m [35m|[m[35m/[m  
+[31m|[m *   [33mca5cbd8[m Merge pull request #12 from aidinlamei/fix/build-errors-and-net10-support
+[31m|[m [1;31m|[m[1;32m\[m  
+[31m|[m * [1;32m\[m   [33m22e180e[m Merge pull request #11 from aidinlamei/fix/build-errors-and-net10-support
+[31m|[m [1;33m|[m[1;34m\[m [1;32m\[m  
+* [1;33m|[m [1;34m|[m [1;32m|[m [33mb106d8f[m Phase 2 - Task 1: Category Commands & Queries
+[1;32m|[m [1;33m|[m[1;32m_[m[1;34m|[m[1;32m/[m  
+[1;32m|[m[1;32m/[m[1;33m|[m [1;34m|[m   
+* [1;33m|[m [1;34m|[m [33m247d832[m Phase 1: Fix critical bugs
+[1;34m|[m [1;33m|[m[1;34m/[m  
+[1;34m|[m[1;34m/[m[1;33m|[m   
+* [1;33m|[m [33ma24b2ea[m Fix build errors and add .NET 10 support
+[1;33m|[m[1;33m/[m  
