@@ -93,7 +93,28 @@ public class ProductVariant : BaseEntity
     /// <param name="basePrice">The base price of the product.</param>
     /// <returns>The final price for this variant.</returns>
     /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
+    /// <remarks>
+    /// This method is maintained for backward compatibility.
+    /// Consider using <see cref="GetFinalPriceWithInfo"/> for more detailed information.
+    /// </remarks>
     public Money GetFinalPrice(Money basePrice)
+    {
+        return GetFinalPriceWithInfo(basePrice).Price;
+    }
+
+    /// <summary>
+    /// Calculates the final price for this variant based on the base product price,
+    /// returning additional information about the calculation.
+    /// </summary>
+    /// <param name="basePrice">The base price of the product.</param>
+    /// <returns>A <see cref="FinalPriceResult"/> containing the final price and whether it was clamped.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
+    /// <remarks>
+    /// If the calculated price would be negative, it is clamped to zero.
+    /// The <see cref="FinalPriceResult.WasClampedToZero"/> property indicates when this occurs,
+    /// allowing calling code to log a warning or take other appropriate action.
+    /// </remarks>
+    public FinalPriceResult GetFinalPriceWithInfo(Money basePrice)
     {
         ArgumentNullException.ThrowIfNull(basePrice);
 
@@ -105,14 +126,16 @@ public class ProductVariant : BaseEntity
         }
 
         var finalAmount = basePrice.Amount + PriceAdjustmentAmount;
+        var wasClampedToZero = false;
 
         // Ensure the final price is not negative
         if (finalAmount < 0)
         {
+            wasClampedToZero = true;
             finalAmount = 0;
         }
 
-        return new Money(finalAmount, basePrice.Currency);
+        return new FinalPriceResult(new Money(finalAmount, basePrice.Currency), wasClampedToZero);
     }
 
     /// <summary>
