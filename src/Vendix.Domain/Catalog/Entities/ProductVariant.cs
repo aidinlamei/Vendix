@@ -4,6 +4,13 @@ using Vendix.Domain.Common;
 namespace Vendix.Domain.Catalog.Entities;
 
 /// <summary>
+/// Represents the result of calculating a product variant's final price.
+/// </summary>
+/// <param name="Price">The final price for the variant.</param>
+/// <param name="WasClampedToZero">Indicates whether the price was clamped to zero due to a negative calculation result.</param>
+public sealed record FinalPriceResult(Money Price, bool WasClampedToZero);
+
+/// <summary>
 /// Represents a variant of a product with its own SKU, price adjustment, and stock.
 /// </summary>
 /// <remarks>
@@ -91,9 +98,9 @@ public class ProductVariant : BaseEntity
     /// Calculates the final price for this variant based on the base product price.
     /// </summary>
     /// <param name="basePrice">The base price of the product.</param>
-    /// <returns>The final price for this variant.</returns>
+    /// <returns>A result containing the final price and whether it was clamped to zero.</returns>
     /// <exception cref="InvalidOperationException">Thrown when currencies don't match.</exception>
-    public Money GetFinalPrice(Money basePrice)
+    public FinalPriceResult GetFinalPrice(Money basePrice)
     {
         ArgumentNullException.ThrowIfNull(basePrice);
 
@@ -105,14 +112,17 @@ public class ProductVariant : BaseEntity
         }
 
         var finalAmount = basePrice.Amount + PriceAdjustmentAmount;
+        var wasClampedToZero = false;
 
         // Ensure the final price is not negative
         if (finalAmount < 0)
         {
             finalAmount = 0;
+            wasClampedToZero = true;
         }
 
-        return new Money(finalAmount, basePrice.Currency);
+        var finalPrice = new Money(finalAmount, basePrice.Currency);
+        return new FinalPriceResult(finalPrice, wasClampedToZero);
     }
 
     /// <summary>

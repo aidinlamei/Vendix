@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Domain.Catalog.Repositories;
+using Vendix.Infrastructure.Caching;
 using Vendix.Infrastructure.Identity;
 using Vendix.Infrastructure.Persistence;
 using Vendix.Infrastructure.Persistence.Interceptors;
@@ -31,6 +32,10 @@ public static class DependencyInjection
 
         // Register HttpContextAccessor for ICurrentUserService
         services.AddHttpContextAccessor();
+
+        // Register caching services
+        services.AddMemoryCache();
+        services.AddScoped<ICacheService, MemoryCacheService>();
 
         // Register services
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();

@@ -32,6 +32,7 @@ public class ProductRepository : IProductRepository
             .Include(p => p.Specifications)
             .Include(p => p.Images)
             .Include(p => p.Translations)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -43,6 +44,7 @@ public class ProductRepository : IProductRepository
             .Include(p => p.Specifications)
             .Include(p => p.Images)
             .Include(p => p.Translations)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Slug.Value == slug.ToLowerInvariant(), cancellationToken);
     }
 
@@ -73,9 +75,8 @@ public class ProductRepository : IProductRepository
     {
         var query = _context.Products
             .AsNoTracking()
-            .Include(p => p.Variants)
-            .Include(p => p.Images)
-            .Include(p => p.Translations)
+            .Include(p => p.Images.Where(i => i.IsMain))
+            .AsSplitQuery()
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -83,8 +84,7 @@ public class ProductRepository : IProductRepository
             var term = searchTerm.ToLowerInvariant();
             query = query.Where(p =>
                 p.Name.ToLower().Contains(term) ||
-                (p.Description != null && p.Description.ToLower().Contains(term)) ||
-                p.Translations.Any(t => t.Title.ToLower().Contains(term)));
+                (p.Description != null && p.Description.ToLower().Contains(term)));
         }
 
         if (categoryId.HasValue)
