@@ -112,6 +112,13 @@ public class Brand : AggregateRoot, IAuditableEntity, ISoftDelete
         LogoUrl = logoUrl;
     }
 
+    /// <inheritdoc />
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+    }
+
     private void SetName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

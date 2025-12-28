@@ -30,4 +30,13 @@ public interface ISoftDelete
     /// This is null if the entity has not been deleted.
     /// </remarks>
     string? DeletedBy { get; set; }
+
+    /// <summary>
+    /// Marks this entity as deleted.
+    /// </summary>
+    /// <remarks>
+    /// Sets the IsDeleted flag to true and records the deletion timestamp.
+    /// The DeletedBy property will be set automatically by the soft delete interceptor.
+    /// </remarks>
+    void MarkAsDeleted();
 }

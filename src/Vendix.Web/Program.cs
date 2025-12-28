@@ -11,8 +11,14 @@ builder.Services.AddRazorComponents()
 
 // Add Application and Infrastructure services
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddInfrastructure(connectionString);
+
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddNpgSql(connectionString);
 
 var app = builder.Build();
 
@@ -34,5 +40,8 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode();
+
+// Map health check endpoint
+app.MapHealthChecks("/health");
 
 app.Run();
