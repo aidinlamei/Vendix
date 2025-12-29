@@ -1,0 +1,21 @@
+[1mdiff --git a/src/Vendix.Web/Components/Layout/AdminLayout.razor b/src/Vendix.Web/Components/Layout/AdminLayout.razor[m
+[1mindex ce9f630..f65a929 100644[m
+[1m--- a/src/Vendix.Web/Components/Layout/AdminLayout.razor[m
+[1m+++ b/src/Vendix.Web/Components/Layout/AdminLayout.razor[m
+[36m@@ -83,6 +83,16 @@[m
+                     }[m
+                 </NavLink>[m
+ [m
+[32m+[m[32m                <NavLink href="/admin/brands" class="nav-link group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-secondary-800 transition">[m
+[32m+[m[32m                    <svg class="h-5 w-5 text-secondary-400 group-hover:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">[m
+[32m+[m[32m                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>[m
+[32m+[m[32m                    </svg>[m
+[32m+[m[32m                    @if (!_isSidebarCollapsed)[m
+[32m+[m[32m                    {[m
+[32m+[m[32m                        <span class="ml-3">Brands</span>[m
+[32m+[m[32m                    }[m
+[32m+[m[32m                </NavLink>[m
+[32m+[m
+                 <NavLink href="/admin/orders" class="nav-link group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-secondary-800 transition">[m
+                     <svg class="h-5 w-5 text-secondary-400 group-hover:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">[m
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>[m
