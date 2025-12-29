@@ -83,14 +83,12 @@ else
 
                         <!-- Category -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Category <span class="text-red-500">*</span>
-                            </label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                             <InputSelect @bind-Value="_model.CategoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                                 <option value="">Select Category</option>
                                 @foreach (var category in _categories)
                                 {
-                                    <option value="@category.Id">@category.Name</option>
+                                    <option value="@category.Id.ToString()">@category.Name</option>
                                 }
                             </InputSelect>
                         </div>
@@ -102,7 +100,7 @@ else
                                 <option value="">No Brand</option>
                                 @foreach (var brand in _brands)
                                 {
-                                    <option value="@brand.Id">@brand.Name</option>
+                                    <option value="@brand.Id.ToString()">@brand.Name</option>
                                 }
                             </InputSelect>
                         </div>
@@ -200,6 +198,15 @@ else
                     }
                 </div>
 
+                <!-- Images Card -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Product Images</h2>
+                    <MultiImageUpload @bind-Images="_productImages"
+                                      Folder="products"
+                                      MaxImages="10"
+                                      OnError="HandleImageError" />
+                </div>
+
                 <!-- Actions -->
                 <div class="flex justify-end space-x-3">
                     <a href="/admin/products" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
@@ -239,6 +246,7 @@ else
     private bool _isLoading = true;
     private bool _isSubmitting;
     private int _activeTranslationTab;
+    private List<MultiImageUpload.ImageItem> _productImages = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -266,6 +274,12 @@ else
                 MapProductToModel();
             }
         }
+        catch (Exception ex)
+        {
+            // TODO: Show error toast
+            Console.WriteLine($"Error loading product data: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
         finally
         {
             _isLoading = false;
@@ -278,7 +292,7 @@ else
         {
             Name = _product!.Name,
             Sku = _product.Sku,
-            Slug = _product.Slug,
+            Slug = _product.Slug ?? string.Empty,
             CategoryId = _product.CategoryId,
             BrandId = _product.BrandId,
             ProductType = _product.ProductType,
@@ -295,6 +309,14 @@ else
         _model.DescriptionEn = enTranslation?.Description;
         _model.TitleFa = faTranslation?.Title;
         _model.DescriptionFa = faTranslation?.Description;
+
+        // Map existing images
+        _productImages = _product.Images?.Select(i => new MultiImageUpload.ImageItem
+        {
+            Url = i.Url,
+            Alt = i.AltText ?? "",
+            IsMain = i.IsMain
+        }).ToList() ?? new();
     }
 
     private async Task HandleSubmit()
@@ -305,7 +327,7 @@ else
             var command = new UpdateProductCommand(
                 Id: Id,
                 Name: _model.Name,
-                Slug: _model.Slug,
+                Slug: _model.Slug ?? string.Empty,
                 Price: _model.Price,
                 Currency: _model.Currency,
                 ProductType: _model.ProductType,
@@ -358,6 +380,12 @@ else
         }
         
         return translations;
+    }
+
+    private void HandleImageError(string error)
+    {
+        // TODO: Show toast notification
+        Console.WriteLine($"Image error: {error}");
     }
 
     private class ProductFormModel

@@ -1,0 +1,243 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using Vendix.Application.Common.Interfaces
+@inject IFileStorage FileStorage
+
+<div class="space-y-4">
+    <!-- Image Gallery -->
+    @if (Images.Any())
+    {
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            @foreach (var (image, index) in Images.Select((img, i) => (img, i)))
+            {
+                <div class="relative group">
+                    <img src="@image.Url" alt="@image.Alt" 
+                         class="w-full h-32 object-cover rounded-lg border @(image.IsMain ? "border-primary-500 ring-2 ring-primary-500" : "border-gray-200")" />
+                    
+                    <!-- Overlay Actions -->
+                    <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center space-x-2">
+                        @if (!image.IsMain)
+                        {
+                            <button type="button" @onclick="() => SetMainImage(index)"
+                                    class="p-2 bg-white rounded-full hover:bg-gray-100" title="Set as main">
+                                <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                            </button>
+                        }
+                        <button type="button" @onclick="() => RemoveImage(index)"
+                                class="p-2 bg-white rounded-full hover:bg-gray-100" title="Remove">
+                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Main Badge -->
+                    @if (image.IsMain)
+                    {
+                        <span class="absolute top-2 left-2 px-2 py-0.5 bg-primary-500 text-white text-xs rounded-full">
+                            Main
+                        </span>
+                    }
+
+                    <!-- Sort Order -->
+                    <span class="absolute bottom-2 right-2 px-2 py-0.5 bg-gray-800 text-white text-xs rounded-full opacity-75">
+                        @(index + 1)
+                    </span>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Upload Area -->
+    @if (Images.Count < MaxImages)
+    {
+        <div class="@DropZoneClass"
+             @ondragenter="HandleDragEnter"
+             @ondragleave="HandleDragLeave"
+             @ondragover:preventDefault>
+            
+            <InputFile OnChange="HandleFilesSelected" 
+                       accept="@AcceptedTypes"
+                       multiple
+                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                       disabled="@IsUploading" />
+            
+            <div class="text-center">
+                @if (IsUploading)
+                {
+                    <div class="flex flex-col items-center">
+                        <svg class="animate-spin h-8 w-8 text-primary-500 mb-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-500">Uploading @_uploadingCount files...</span>
+                    </div>
+                }
+                else
+                {
+                    <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Add more images (@Images.Count / @MaxImages)
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500">@HelpText</p>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-sm text-gray-500 text-center">Maximum @MaxImages images reached</p>
+    }
+
+    <!-- Error Message -->
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="flex items-center text-red-600 text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            @_errorMessage
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<ImageItem> Images { get; set; } = new();
+    [Parameter] public string Folder { get; set; } = "products";
+    [Parameter] public int MaxImages { get; set; } = 10;
+    [Parameter] public long MaxFileSizeBytes { get; set; } = 5 * 1024 * 1024;
+    [Parameter] public string AcceptedTypes { get; set; } = ".jpg,.jpeg,.png,.webp,.gif";
+    [Parameter] public string HelpText { get; set; } = "JPG, PNG, WebP or GIF (max 5MB each)";
+    
+    [Parameter] public EventCallback<List<ImageItem>> ImagesChanged { get; set; }
+    [Parameter] public EventCallback<string> OnError { get; set; }
+
+    private bool _isDragging;
+    private bool IsUploading;
+    private int _uploadingCount;
+    private string? _errorMessage;
+
+    private string DropZoneClass => $"relative border-2 border-dashed rounded-lg p-6 transition-colors " +
+        (_isDragging ? "border-primary-500 bg-primary-50" : "border-gray-300 hover:border-gray-400");
+
+    private void HandleDragEnter() => _isDragging = true;
+    private void HandleDragLeave() => _isDragging = false;
+
+    private async Task HandleFilesSelected(InputFileChangeEventArgs e)
+    {
+        _errorMessage = null;
+        var remainingSlots = MaxImages - Images.Count;
+        if (remainingSlots <= 0) return;
+
+        var files = e.GetMultipleFiles(remainingSlots);
+        
+        if (!files.Any()) return;
+
+        IsUploading = true;
+        _uploadingCount = files.Count;
+        StateHasChanged();
+
+        var newImages = new List<ImageItem>();
+        var errors = new List<string>();
+
+        foreach (var file in files)
+        {
+            // Validate file size
+            if (file.Size > MaxFileSizeBytes)
+            {
+                errors.Add($"{file.Name}: exceeds size limit");
+                continue;
+            }
+
+            // Validate file type
+            var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            var allowedExtensions = AcceptedTypes.Split(',').Select(x => x.Trim().ToLowerInvariant());
+            if (!allowedExtensions.Contains(extension))
+            {
+                errors.Add($"{file.Name}: invalid file type");
+                continue;
+            }
+
+            try
+            {
+                await using var stream = file.OpenReadStream(MaxFileSizeBytes);
+                var path = await FileStorage.UploadAsync(stream, file.Name, Folder);
+                var publicUrl = FileStorage.GetPublicUrl(path);
+
+                newImages.Add(new ImageItem
+                {
+                    Url = publicUrl,
+                    Alt = Path.GetFileNameWithoutExtension(file.Name),
+                    IsMain = !Images.Any() && !newImages.Any() // First image is main
+                });
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{file.Name}: {ex.Message}");
+            }
+        }
+
+        if (newImages.Any())
+        {
+            Images.AddRange(newImages);
+            await ImagesChanged.InvokeAsync(Images);
+        }
+
+        if (errors.Any())
+        {
+            _errorMessage = string.Join("; ", errors);
+            await OnError.InvokeAsync(_errorMessage);
+        }
+
+        IsUploading = false;
+        _uploadingCount = 0;
+        StateHasChanged();
+    }
+
+    private async Task SetMainImage(int index)
+    {
+        foreach (var img in Images)
+        {
+            img.IsMain = false;
+        }
+        Images[index].IsMain = true;
+        await ImagesChanged.InvokeAsync(Images);
+    }
+
+    private async Task RemoveImage(int index)
+    {
+        var image = Images[index];
+        
+        // Try to delete from storage
+        try
+        {
+            var path = image.Url.Replace("/uploads/", "");
+            await FileStorage.DeleteAsync(path);
+        }
+        catch { /* Ignore */ }
+
+        var wasMain = image.IsMain;
+        Images.RemoveAt(index);
+
+        // If removed image was main, set first as main
+        if (wasMain && Images.Any())
+        {
+            Images[0].IsMain = true;
+        }
+
+        await ImagesChanged.InvokeAsync(Images);
+    }
+
+    public class ImageItem
+    {
+        public string Url { get; set; } = string.Empty;
+        public string Alt { get; set; } = string.Empty;
+        public bool IsMain { get; set; }
+    }
+}
+

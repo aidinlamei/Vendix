@@ -45,7 +45,7 @@
                     <option value="">All Categories</option>
                     @foreach (var category in _categories)
                     {
-                        <option value="@category.Id">@category.Name</option>
+                        <option value="@category.Id.ToString()">@category.Name</option>
                     }
                 </select>
             </div>
@@ -57,7 +57,7 @@
                     <option value="">All Brands</option>
                     @foreach (var brand in _brands)
                     {
-                        <option value="@brand.Id">@brand.Name</option>
+                        <option value="@brand.Id.ToString()">@brand.Name</option>
                     }
                 </select>
             </div>
@@ -197,7 +197,7 @@
                OnCancel="() => _showDeleteConfirm = false" />
 
 @code {
-    private PaginatedList<ProductListDto> _products = PaginatedList<ProductListDto>.Empty<ProductListDto>();
+    private PaginatedList<ProductListDto> _products = PaginatedList<ProductListDto>.Empty();
     private List<CategoryListDto> _categories = [];
     private List<BrandListDto> _brands = [];
     
@@ -219,13 +219,22 @@
 
     private async Task LoadFilters()
     {
-        var categoriesTask = Mediator.Send(new GetCategoriesQuery());
-        var brandsTask = Mediator.Send(new GetBrandsQuery());
-        
-        await Task.WhenAll(categoriesTask, brandsTask);
-        
-        _categories = await categoriesTask;
-        _brands = await brandsTask;
+        try
+        {
+            var categoriesTask = Mediator.Send(new GetCategoriesQuery());
+            var brandsTask = Mediator.Send(new GetBrandsQuery());
+            
+            await Task.WhenAll(categoriesTask, brandsTask);
+            
+            _categories = await categoriesTask;
+            _brands = await brandsTask;
+        }
+        catch (Exception ex)
+        {
+            // TODO: Show error toast
+            Console.WriteLine($"Error loading filters: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
     }
 
     private async Task LoadProducts()

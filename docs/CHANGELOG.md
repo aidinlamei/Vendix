@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 7: Image Upload Component (Date: 2025-12-29)
+
+**Added:**
+
+Shared Components (src/Vendix.Web/Components/Shared/):
+- `ImageUpload.razor` - Single image upload with drag & drop
+- `MultiImageUpload.razor` - Multi-image gallery upload for products
+
+**Features:**
+- Drag and drop support (visual feedback)
+- File type validation (jpg, jpeg, png, webp, gif)
+- File size validation (5MB default)
+- Upload progress indicator
+- Image preview with remove button
+- Multi-image gallery with main image selection
+- Sort order display
+- Error message display
+- Integration with IFileStorage service
+
+**Integration:**
+- Brand Create/Edit pages now use ImageUpload for logo
+- Product Create/Edit pages now use MultiImageUpload for gallery
+
+**Technical Decisions:**
+- Components use IFileStorage interface for abstraction
+- Blazor InputFile for file selection (native component)
+- Client-side validation before upload
+- Automatic main image assignment (first uploaded)
+- Image deletion on remove
+
+**Notes:**
+- Drag & drop file access limited by Blazor (visual only, files via InputFile)
+- TODO: Add image resizing/optimization (ImageSharp integration)
+- TODO: Add reordering via drag & drop
+
+---
+
 ### Phase 2 - Task 6: Product Admin Pages - Code Review (Date: 2025-12-29)
 
 **Reviewed By:** Claude Opus 4.5 (AI Code Review)

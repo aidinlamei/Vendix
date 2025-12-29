@@ -53,29 +53,16 @@
                 <p class="text-sm text-gray-500 mt-1">URL-friendly identifier. Leave empty to auto-generate from name.</p>
             </div>
 
-            <!-- Logo URL -->
+            <!-- Logo Upload -->
             <div>
-                <label for="logoUrl" class="block text-sm font-medium text-gray-700 mb-1">
-                    Logo URL
-                </label>
-                <InputText id="logoUrl" @bind-Value="_model.LogoUrl" 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                           placeholder="https://example.com/logo.png" />
-                <p class="text-sm text-gray-500 mt-1">Direct URL to the brand logo image. Must be a valid HTTP/HTTPS URL.</p>
-                <ValidationMessage For="() => _model.LogoUrl" class="text-red-500 text-sm mt-1" />
+                <label class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                <ImageUpload CurrentImageUrl="@_model.LogoUrl"
+                             Folder="brands"
+                             Alt="Brand Logo"
+                             OnImageUploaded="HandleLogoUploaded"
+                             OnImageRemoved="HandleLogoRemoved"
+                             HelpText="Square image recommended (max 5MB)" />
             </div>
-
-            <!-- Logo Preview -->
-            @if (!string.IsNullOrEmpty(_model.LogoUrl))
-            {
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                    <div class="w-24 h-24 border border-gray-200 rounded-lg overflow-hidden">
-                        <img src="@_model.LogoUrl" alt="Logo preview" class="w-full h-full object-contain" 
-                             @onerror="HandleImageError" />
-                    </div>
-                </div>
-            }
 
             <!-- Actions -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
@@ -137,9 +124,14 @@
         }
     }
 
-    private void HandleImageError()
+    private void HandleLogoUploaded(string url)
     {
-        // Image failed to load - could show error state
+        _model.LogoUrl = url;
+    }
+
+    private void HandleLogoRemoved()
+    {
+        _model.LogoUrl = null;
     }
 
     private class BrandFormModel
