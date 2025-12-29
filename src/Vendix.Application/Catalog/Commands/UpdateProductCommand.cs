@@ -14,7 +14,6 @@ namespace Vendix.Application.Catalog.Commands;
 /// </summary>
 /// <param name="Id">The product ID.</param>
 /// <param name="Name">The product name.</param>
-/// <param name="Sku">The Stock Keeping Unit.</param>
 /// <param name="Slug">The URL-friendly slug.</param>
 /// <param name="Price">The product price.</param>
 /// <param name="Currency">The price currency.</param>
@@ -22,17 +21,20 @@ namespace Vendix.Application.Catalog.Commands;
 /// <param name="Description">Optional product description.</param>
 /// <param name="CategoryId">Optional category ID.</param>
 /// <param name="BrandId">Optional brand ID.</param>
+/// <param name="IsActive">Whether the product is active (visible to customers).</param>
+/// <param name="Translations">Optional list of translations.</param>
 public sealed record UpdateProductCommand(
     Guid Id,
     string Name,
-    string Sku,
     string Slug,
     decimal Price,
     string Currency,
     ProductType ProductType,
     string? Description = null,
     Guid? CategoryId = null,
-    Guid? BrandId = null) : IRequest<Result>;
+    Guid? BrandId = null,
+    bool IsActive = true,
+    IReadOnlyList<ProductTranslationInput>? Translations = null) : IRequest<Result>;
 
 /// <summary>
 /// Handler for <see cref="UpdateProductCommand"/>.
@@ -59,13 +61,39 @@ public sealed class UpdateProductCommandHandler(
         }
 
         product.UpdateName(request.Name);
-        product.UpdateSku(new Sku(request.Sku));
         product.UpdateSlug(new Slug(request.Slug));
         product.UpdatePrice(new Money(request.Price, request.Currency));
         product.UpdateProductType(request.ProductType);
         product.UpdateDescription(request.Description);
         product.AssignToCategory(request.CategoryId);
         product.AssignToBrand(request.BrandId);
+
+        // Update translations
+        if (request.Translations is not null)
+        {
+            // Remove existing translations for languages being updated
+            foreach (var translation in request.Translations)
+            {
+                product.RemoveTranslation(translation.LanguageCode);
+                product.AddTranslation(
+                    translation.LanguageCode,
+                    translation.Title,
+                    translation.Description);
+            }
+        }
+
+        // Update active status
+        if (request.IsActive && product.IsDeleted)
+        {
+            // Restore if was deleted
+            product.IsDeleted = false;
+            product.DeletedAt = null;
+            product.DeletedBy = null;
+        }
+        else if (!request.IsActive && !product.IsDeleted)
+        {
+            product.MarkAsDeleted();
+        }
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -93,16 +121,6 @@ public sealed class UpdateProductCommandValidator : AbstractValidator<UpdateProd
             .WithMessage("Product name is required.")
             .MaximumLength(200)
             .WithMessage("Product name must not exceed 200 characters.");
-
-        RuleFor(x => x.Sku)
-            .NotEmpty()
-            .WithMessage("SKU is required.")
-            .MinimumLength(Sku.MinLength)
-            .WithMessage($"SKU must be at least {Sku.MinLength} characters.")
-            .MaximumLength(Sku.MaxLength)
-            .WithMessage($"SKU must not exceed {Sku.MaxLength} characters.")
-            .Matches(Sku.Pattern)
-            .WithMessage("SKU must contain only letters, numbers, and hyphens.");
 
         RuleFor(x => x.Slug)
             .NotEmpty()

@@ -1,0 +1,325 @@
+@page "/admin/products/create"
+@layout AdminLayout
+
+@using MediatR
+@using Vendix.Application.Catalog.Commands
+@using Vendix.Application.Catalog.DTOs
+@using Vendix.Application.Catalog.Queries
+@using Vendix.Domain.Catalog.Enums
+@using Vendix.Web.Components.Shared
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Create Product - Vendix Admin</PageTitle>
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center space-x-4">
+        <a href="/admin/products" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Create Product</h1>
+            <p class="text-gray-600 mt-1">Add a new product to your catalog</p>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <EditForm Model="_model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        
+        <div class="space-y-6">
+            <!-- Basic Info Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Basic Information</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Product Name <span class="text-red-500">*</span>
+                        </label>
+                        <InputText @bind-Value="_model.Name" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                   placeholder="e.g., iPhone 15 Pro Max" />
+                        <ValidationMessage For="() => _model.Name" class="text-red-500 text-sm mt-1" />
+                    </div>
+
+                    <!-- SKU -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            SKU <span class="text-red-500">*</span>
+                        </label>
+                        <InputText @bind-Value="_model.Sku" 
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono"
+                                   placeholder="e.g., IPHONE-15-PRO-256" />
+                        <ValidationMessage For="() => _model.Sku" class="text-red-500 text-sm mt-1" />
+                    </div>
+
+                    <!-- Slug -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                        <div class="flex items-center">
+                            <span class="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500">/products/</span>
+                            <InputText @bind-Value="_model.Slug" 
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500"
+                                       placeholder="auto-generated" />
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">Leave empty to auto-generate from name</p>
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <InputSelect @bind-Value="_model.CategoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Select Category</option>
+                            @foreach (var category in _categories)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => _model.CategoryId" class="text-red-500 text-sm mt-1" />
+                    </div>
+
+                    <!-- Brand -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                        <InputSelect @bind-Value="_model.BrandId" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">No Brand</option>
+                            @foreach (var brand in _brands)
+                            {
+                                <option value="@brand.Id">@brand.Name</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <!-- Product Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
+                        <InputSelect @bind-Value="_model.ProductType" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="@ProductType.Physical">Physical Product</option>
+                            <option value="@ProductType.Digital">Digital Product</option>
+                        </InputSelect>
+                    </div>
+
+                    <!-- Is Active -->
+                    <div class="flex items-center">
+                        <InputCheckbox @bind-Value="_model.IsActive" class="h-4 w-4 text-primary-600 rounded" />
+                        <label class="ml-2 text-sm text-gray-700">Active (visible to customers)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Pricing</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Price <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex items-center">
+                            <span class="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500">$</span>
+                            <InputNumber @bind-Value="_model.Price" 
+                                         class="flex-1 px-4 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-primary-500"
+                                         placeholder="0.00" />
+                        </div>
+                        <ValidationMessage For="() => _model.Price" class="text-red-500 text-sm mt-1" />
+                    </div>
+
+                    <!-- Currency -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <InputSelect @bind-Value="_model.Currency" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="IRR">IRR (﷼)</option>
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description Card -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Description</h2>
+                
+                <!-- Translations Tabs -->
+                <div class="border-b mb-4">
+                    <nav class="flex space-x-4">
+                        <button type="button" @onclick="() => _activeTranslationTab = 0"
+                                class="@(_activeTranslationTab == 0 ? "border-primary-500 text-primary-600" : "border-transparent text-gray-500") border-b-2 py-2 px-1 text-sm font-medium">
+                            English
+                        </button>
+                        <button type="button" @onclick="() => _activeTranslationTab = 1"
+                                class="@(_activeTranslationTab == 1 ? "border-primary-500 text-primary-600" : "border-transparent text-gray-500") border-b-2 py-2 px-1 text-sm font-medium">
+                            فارسی
+                        </button>
+                    </nav>
+                </div>
+
+                @if (_activeTranslationTab == 0)
+                {
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title (English)</label>
+                            <InputText @bind-Value="_model.TitleEn" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description (English)</label>
+                            <InputTextArea @bind-Value="_model.DescriptionEn" rows="4"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="space-y-4" dir="rtl">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">عنوان (فارسی)</label>
+                            <InputText @bind-Value="_model.TitleFa" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات (فارسی)</label>
+                            <InputTextArea @bind-Value="_model.DescriptionFa" rows="4"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end space-x-3">
+                <a href="/admin/products" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" disabled="@_isSubmitting"
+                        class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50">
+                    @if (_isSubmitting)
+                    {
+                        <span class="inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Creating...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>Create Product</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private ProductFormModel _model = new();
+    private List<CategoryListDto> _categories = [];
+    private List<BrandListDto> _brands = [];
+    private bool _isSubmitting;
+    private int _activeTranslationTab;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categoriesTask = Mediator.Send(new GetCategoriesQuery());
+        var brandsTask = Mediator.Send(new GetBrandsQuery());
+        
+        await Task.WhenAll(categoriesTask, brandsTask);
+        
+        _categories = await categoriesTask;
+        _brands = await brandsTask;
+    }
+
+    private async Task HandleSubmit()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var command = new CreateProductCommand(
+                Name: _model.Name,
+                Sku: _model.Sku,
+                Slug: string.IsNullOrWhiteSpace(_model.Slug) ? null : _model.Slug,
+                Price: _model.Price,
+                Currency: _model.Currency,
+                ProductType: _model.ProductType,
+                Description: null,
+                CategoryId: _model.CategoryId,
+                BrandId: _model.BrandId,
+                IsActive: _model.IsActive,
+                Translations: BuildTranslations()
+            );
+
+            var result = await Mediator.Send(command);
+            if (result.IsSuccess)
+            {
+                Navigation.NavigateTo("/admin/products");
+            }
+        }
+        catch (Exception ex)
+        {
+            // TODO: Show error toast
+            Console.WriteLine($"Error creating product: {ex.Message}");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private List<ProductTranslationInput> BuildTranslations()
+    {
+        var translations = new List<ProductTranslationInput>();
+        
+        if (!string.IsNullOrWhiteSpace(_model.TitleEn) || !string.IsNullOrWhiteSpace(_model.DescriptionEn))
+        {
+            translations.Add(new ProductTranslationInput
+            {
+                LanguageCode = "en",
+                Title = _model.TitleEn ?? _model.Name,
+                Description = _model.DescriptionEn
+            });
+        }
+        
+        if (!string.IsNullOrWhiteSpace(_model.TitleFa) || !string.IsNullOrWhiteSpace(_model.DescriptionFa))
+        {
+            translations.Add(new ProductTranslationInput
+            {
+                LanguageCode = "fa",
+                Title = _model.TitleFa ?? _model.Name,
+                Description = _model.DescriptionFa
+            });
+        }
+        
+        return translations;
+    }
+
+    private class ProductFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Sku { get; set; } = string.Empty;
+        public string? Slug { get; set; }
+        public Guid? CategoryId { get; set; }
+        public Guid? BrandId { get; set; }
+        public ProductType ProductType { get; set; } = ProductType.Physical;
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "USD";
+        public bool IsActive { get; set; } = true;
+        
+        // Translations
+        public string? TitleEn { get; set; }
+        public string? DescriptionEn { get; set; }
+        public string? TitleFa { get; set; }
+        public string? DescriptionFa { get; set; }
+    }
+}
+

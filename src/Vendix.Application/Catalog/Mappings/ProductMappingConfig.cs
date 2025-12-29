@@ -33,13 +33,16 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.Variants, src => src.Variants)
             .Map(dest => dest.Specifications, src => src.Specifications)
             .Map(dest => dest.Images, src => src.Images)
+            .Map(dest => dest.Translations, src => src.Translations)
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
-            .Map(dest => dest.ModifiedAt, src => src.ModifiedAt);
+            .Map(dest => dest.ModifiedAt, src => src.ModifiedAt)
+            .Map(dest => dest.IsActive, src => !src.IsDeleted);
 
         // Product -> ProductListDto
         config.NewConfig<Product, ProductListDto>()
             .Map(dest => dest.Id, src => src.Id)
             .Map(dest => dest.Name, src => src.Name)
+            .Map(dest => dest.Sku, src => src.Sku.Value)
             .Map(dest => dest.Slug, src => src.Slug.Value)
             .Map(dest => dest.Price, src => src.Price.Amount)
             .Map(dest => dest.Currency, src => src.Price.Currency)
@@ -48,7 +51,9 @@ public sealed class ProductMappingConfig : IRegister
                 .Select(i => i.Url)
                 .FirstOrDefault())
             .Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null)
-            .Map(dest => dest.BrandName, src => src.Brand != null ? src.Brand.Name : null);
+            .Map(dest => dest.BrandName, src => src.Brand != null ? src.Brand.Name : null)
+            .Map(dest => dest.TotalStock, src => src.Variants.Sum(v => v.StockQuantity))
+            .Map(dest => dest.IsActive, src => !src.IsDeleted);
 
         // ProductVariant -> ProductVariantDto
         config.NewConfig<ProductVariant, ProductVariantDto>()
@@ -72,5 +77,12 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.AltText, src => src.AltText)
             .Map(dest => dest.SortOrder, src => src.SortOrder)
             .Map(dest => dest.IsMain, src => src.IsMain);
+
+        // ProductTranslation -> ProductTranslationDto
+        config.NewConfig<ProductTranslation, ProductTranslationDto>()
+            .Map(dest => dest.Id, src => src.Id)
+            .Map(dest => dest.LanguageCode, src => src.LanguageCode)
+            .Map(dest => dest.Title, src => src.Title)
+            .Map(dest => dest.Description, src => src.Description);
     }
 }

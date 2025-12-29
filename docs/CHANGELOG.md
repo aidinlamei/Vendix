@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 6: Product Admin Pages (Date: 2025-12-28)
+
+**Added:**
+
+Blazor Admin Pages (src/Vendix.Web/Components/Pages/Admin/Products/):
+- `Index.razor` - Product list with search, filters, pagination
+- `Create.razor` - Create new product form with translations
+- `Edit.razor` - Edit existing product form
+
+**Features:**
+- DataGrid with sorting and pagination
+- Search by name or SKU
+- Filter by Category and Brand
+- Multi-language support (EN/FA tabs)
+- Stock status indicators (Out of Stock, Low, In Stock)
+- Active/Draft status badges
+- Price with currency selector
+- Product type selection (Physical/Digital)
+- Image preview in list
+- Delete confirmation dialog
+
+**DTOs Updated:**
+- `ProductListDto` - Added Title, Sku, TotalStock, IsActive fields
+- `ProductDto` - Added Translations and IsActive fields
+- `ProductTranslationDto` - New DTO for product translations
+
+**Commands Updated:**
+- `CreateProductCommand` - Added IsActive and Translations support
+- `UpdateProductCommand` - Added IsActive and Translations support, removed Sku (readonly)
+- `ProductTranslationInput` - New input model for translations
+
+**Technical Decisions:**
+- Parallel loading of filters (categories, brands) for better performance
+- SKU is readonly in edit mode (cannot be changed after creation)
+- Translations stored separately for EN and FA
+- Currency selector with USD, EUR, IRR options
+- Empty state with call-to-action
+- Slug auto-generation if not provided
+
+**Notes:**
+- TODO: Add image upload component (Task 7)
+- TODO: Add variant management inline
+- TODO: Add specification key-value editor
+- TODO: Add error toast notifications
+
+---
+
 ### Phase 2 - Task 5: LocalFileStorage Implementation (Date: 2025-12-28)
 
 **Added:**

@@ -18,6 +18,11 @@ public sealed record ProductDto
     public string Name { get; init; } = null!;
 
     /// <summary>
+    /// Gets the product title (alias for Name, used for translations).
+    /// </summary>
+    public string Title => Name;
+
+    /// <summary>
     /// Gets the product description.
     /// </summary>
     public string? Description { get; init; }
@@ -88,6 +93,11 @@ public sealed record ProductDto
     public IReadOnlyList<ProductImageDto> Images { get; init; } = [];
 
     /// <summary>
+    /// Gets the product translations.
+    /// </summary>
+    public IReadOnlyList<ProductTranslationDto> Translations { get; init; } = [];
+
+    /// <summary>
     /// Gets the creation date.
     /// </summary>
     public DateTime CreatedAt { get; init; }
@@ -96,6 +106,11 @@ public sealed record ProductDto
     /// Gets the last modification date.
     /// </summary>
     public DateTime? ModifiedAt { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the product is active (not deleted).
+    /// </summary>
+    public bool IsActive { get; init; }
 }
 
 /// <summary>
@@ -112,6 +127,16 @@ public sealed record ProductListDto
     /// Gets the product name.
     /// </summary>
     public string Name { get; init; } = null!;
+
+    /// <summary>
+    /// Gets the product title (alias for Name, used for translations).
+    /// </summary>
+    public string Title => Name;
+
+    /// <summary>
+    /// Gets the Stock Keeping Unit.
+    /// </summary>
+    public string Sku { get; init; } = null!;
 
     /// <summary>
     /// Gets the URL-friendly slug.
@@ -142,6 +167,16 @@ public sealed record ProductListDto
     /// Gets the brand name.
     /// </summary>
     public string? BrandName { get; init; }
+
+    /// <summary>
+    /// Gets the total stock quantity (sum of all variant stocks).
+    /// </summary>
+    public int TotalStock { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the product is active (not deleted).
+    /// </summary>
+    public bool IsActive { get; init; }
 }
 
 /// <summary>
@@ -199,6 +234,32 @@ public sealed record ProductSpecificationDto
     /// Gets the specification value.
     /// </summary>
     public string Value { get; init; } = null!;
+}
+
+/// <summary>
+/// Data transfer object for product translation.
+/// </summary>
+public sealed record ProductTranslationDto
+{
+    /// <summary>
+    /// Gets the translation ID.
+    /// </summary>
+    public Guid Id { get; init; }
+
+    /// <summary>
+    /// Gets the ISO 639-1 language code (e.g., "en", "fa").
+    /// </summary>
+    public string LanguageCode { get; init; } = null!;
+
+    /// <summary>
+    /// Gets the translated product title.
+    /// </summary>
+    public string Title { get; init; } = null!;
+
+    /// <summary>
+    /// Gets the translated product description.
+    /// </summary>
+    public string? Description { get; init; }
 }
 
 /// <summary>

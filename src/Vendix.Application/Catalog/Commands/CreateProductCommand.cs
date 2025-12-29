@@ -11,6 +11,27 @@ using Vendix.Domain.Catalog.ValueObjects;
 namespace Vendix.Application.Catalog.Commands;
 
 /// <summary>
+/// Input model for product translation.
+/// </summary>
+public sealed class ProductTranslationInput
+{
+    /// <summary>
+    /// Gets or sets the ISO 639-1 language code (e.g., "en", "fa").
+    /// </summary>
+    public string LanguageCode { get; set; } = "en";
+
+    /// <summary>
+    /// Gets or sets the translated product title.
+    /// </summary>
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the translated product description.
+    /// </summary>
+    public string? Description { get; set; }
+}
+
+/// <summary>
 /// Command to create a new product.
 /// </summary>
 /// <param name="Name">The product name.</param>
@@ -22,16 +43,20 @@ namespace Vendix.Application.Catalog.Commands;
 /// <param name="Description">Optional product description.</param>
 /// <param name="CategoryId">Optional category ID.</param>
 /// <param name="BrandId">Optional brand ID.</param>
+/// <param name="IsActive">Whether the product is active (visible to customers).</param>
+/// <param name="Translations">Optional list of translations.</param>
 public sealed record CreateProductCommand(
     string Name,
     string Sku,
-    string Slug,
+    string? Slug,
     decimal Price,
     string Currency,
     ProductType ProductType,
     string? Description = null,
     Guid? CategoryId = null,
-    Guid? BrandId = null) : IRequest<Result<Guid>>;
+    Guid? BrandId = null,
+    bool IsActive = true,
+    IReadOnlyList<ProductTranslationInput>? Translations = null) : IRequest<Result<Guid>>;
 
 /// <summary>
 /// Handler for <see cref="CreateProductCommand"/>.
@@ -43,28 +68,62 @@ public sealed class CreateProductCommandHandler(
     /// <inheritdoc />
     public async Task<Result<Guid>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
+        // Generate slug if not provided
+        var slug = request.Slug ?? GenerateSlug(request.Name);
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            slug = GenerateSlug(request.Name);
+        }
+
         // Check for duplicate Slug
         var existingBySlug = await productRepository.GetBySlugAsync(
-            new Slug(request.Slug), cancellationToken);
+            new Slug(slug), cancellationToken);
         if (existingBySlug is not null)
         {
-            throw new ConflictException("Product", "Slug", request.Slug);
+            throw new ConflictException("Product", "Slug", slug);
         }
 
         var product = new Product(
             request.Name,
             new Sku(request.Sku),
-            new Slug(request.Slug),
+            new Slug(slug),
             new Money(request.Price, request.Currency),
             request.ProductType,
             request.Description,
             request.CategoryId,
             request.BrandId);
 
+        // Add translations if provided
+        if (request.Translations is not null)
+        {
+            foreach (var translation in request.Translations)
+            {
+                product.AddTranslation(
+                    translation.LanguageCode,
+                    translation.Title,
+                    translation.Description);
+            }
+        }
+
+        // Soft delete if not active
+        if (!request.IsActive)
+        {
+            product.MarkAsDeleted();
+        }
+
         await productRepository.AddAsync(product, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<Guid>.Success(product.Id);
+    }
+
+    private static string GenerateSlug(string name)
+    {
+        // Simple slug generation - convert to lowercase, replace spaces with hyphens
+        return name.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("_", "-")
+            .Trim('-');
     }
 }
 
@@ -95,14 +154,13 @@ public sealed class CreateProductCommandValidator : AbstractValidator<CreateProd
             .WithMessage("SKU must contain only letters, numbers, and hyphens.");
 
         RuleFor(x => x.Slug)
-            .NotEmpty()
-            .WithMessage("Slug is required.")
             .MinimumLength(Slug.MinLength)
             .WithMessage($"Slug must be at least {Slug.MinLength} characters.")
             .MaximumLength(Slug.MaxLength)
             .WithMessage($"Slug must not exceed {Slug.MaxLength} characters.")
             .Matches(Slug.Pattern)
-            .WithMessage("Slug must contain only lowercase letters, numbers, and hyphens.");
+            .WithMessage("Slug must contain only lowercase letters, numbers, and hyphens.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Slug));
 
         RuleFor(x => x.Price)
             .GreaterThan(0)
