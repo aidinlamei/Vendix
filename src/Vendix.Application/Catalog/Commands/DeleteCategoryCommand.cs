@@ -11,7 +11,8 @@ public record DeleteCategoryCommand(Guid Id) : IRequest<Result>;
 public class DeleteCategoryCommandHandler(
     ICategoryRepository categoryRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteCategoryCommand, Result>
+    ICurrentUserService currentUserService,
+    ICacheService cacheService) : IRequestHandler<DeleteCategoryCommand, Result>
 {
     public async Task<Result> Handle(DeleteCategoryCommand request, CancellationToken cancellationToken)
     {
@@ -32,6 +33,9 @@ public class DeleteCategoryCommandHandler(
         
         categoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("categories", cancellationToken);
 
         return Result.Success();
     }

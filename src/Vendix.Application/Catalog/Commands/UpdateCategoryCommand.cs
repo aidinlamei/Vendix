@@ -19,7 +19,8 @@ public record UpdateCategoryCommand : IRequest<Result>
 
 public class UpdateCategoryCommandHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateCategoryCommand, Result>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<UpdateCategoryCommand, Result>
 {
     public async Task<Result> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
     {
@@ -106,6 +107,9 @@ public class UpdateCategoryCommandHandler(
 
         categoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("categories", cancellationToken);
 
         return Result.Success();
     }

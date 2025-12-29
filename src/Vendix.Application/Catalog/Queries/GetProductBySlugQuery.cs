@@ -2,6 +2,7 @@ using FluentValidation;
 using MapsterMapper;
 using MediatR;
 using Vendix.Application.Catalog.DTOs;
+using Vendix.Application.Common.Attributes;
 using Vendix.Application.Common.Exceptions;
 using Vendix.Application.Common.Models;
 using Vendix.Domain.Catalog.Entities;
@@ -14,6 +15,7 @@ namespace Vendix.Application.Catalog.Queries;
 /// Query to get a product by its slug.
 /// </summary>
 /// <param name="Slug">The product slug.</param>
+[CacheableQuery(Key = "products:detail", ExpiryMinutes = 5)]
 public sealed record GetProductBySlugQuery(string Slug) : IRequest<Result<ProductDto>>;
 
 /// <summary>

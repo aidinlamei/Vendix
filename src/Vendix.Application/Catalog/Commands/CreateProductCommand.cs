@@ -63,7 +63,8 @@ public sealed record CreateProductCommand(
 /// </summary>
 public sealed class CreateProductCommandHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateProductCommand, Result<Guid>>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<CreateProductCommand, Result<Guid>>
 {
     /// <inheritdoc />
     public async Task<Result<Guid>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
@@ -113,6 +114,9 @@ public sealed class CreateProductCommandHandler(
 
         await productRepository.AddAsync(product, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("products", cancellationToken);
 
         return Result<Guid>.Success(product.Id);
     }

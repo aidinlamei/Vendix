@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 8: Cache Activation on Queries (Date: 2025-12-29)
+
+**Added:**
+
+Cache Activation for Catalog Queries:
+- GetCategoriesQuery - 30 min TTL
+- GetCategoryTreeQuery - 30 min TTL
+- GetBrandsQuery - 30 min TTL
+- GetProductsQuery - 5 min TTL
+- GetProductBySlugQuery - 5 min TTL (public detail page)
+
+Cache Invalidation in Commands:
+- CreateCategoryCommand, UpdateCategoryCommand, DeleteCategoryCommand
+- CreateBrandCommand, UpdateBrandCommand, DeleteBrandCommand
+- CreateProductCommand, UpdateProductCommand, DeleteProductCommand
+
+**Technical Decisions:**
+- List queries cached (frequently read, rarely written)
+- Single entity by ID NOT cached (need fresh data for edit pages)
+- Single entity by Slug cached for public pages (read-heavy)
+- Products cache TTL shorter (5 min) due to stock/price changes
+- Categories/Brands cache TTL longer (30 min) - less volatile
+- Cache invalidation on all write operations (create/update/delete)
+- Using prefix-based invalidation for simplicity
+
+**Cache Strategy:**
+
+| Query | Cached | TTL |
+|-------|--------|-----|
+| GetCategoriesQuery | ✅ | 30 min |
+| GetCategoryTreeQuery | ✅ | 30 min |
+| GetCategoryByIdQuery | ❌ | - |
+| GetCategoryBySlugQuery | ❌ | - |
+| GetBrandsQuery | ✅ | 30 min |
+| GetBrandByIdQuery | ❌ | - |
+| GetBrandBySlugQuery | ❌ | - |
+| GetProductsQuery | ✅ | 5 min |
+| GetProductByIdQuery | ❌ | - |
+| GetProductBySlugQuery | ✅ | 5 min |
+
+**Notes:**
+- TODO: Add Redis support for production (multi-instance)
+- TODO: Add cache statistics/monitoring
+- TODO: Consider sliding expiration for frequently accessed items
+
+---
+
 ### Phase 2 - Task 7: Image Upload Component (Date: 2025-12-29)
 
 **Added:**

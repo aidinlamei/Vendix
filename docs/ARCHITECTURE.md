@@ -685,7 +685,7 @@ src/Vendix.Web/Components/Pages/Catalog/
 | 5 | LocalFileStorage Implementation | ✅ |
 | 6 | Product Admin Pages (Index, Create, Edit) | ✅ |
 | 7 | Image Upload Component | ✅ |
-| 8 | Cache Activation on Queries | ⬜ |
+| 8 | Cache Activation on Queries | ✅ |
 | 9 | Public Products Page | ⬜ |
 | 10 | Public Product Detail Page | ⬜ |
 | 11 | Public Category Page | ⬜ |

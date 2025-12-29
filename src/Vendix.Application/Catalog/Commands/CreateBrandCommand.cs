@@ -17,7 +17,8 @@ public record CreateBrandCommand : IRequest<Result<Guid>>
 
 public class CreateBrandCommandHandler(
     IBrandRepository brandRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateBrandCommand, Result<Guid>>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<CreateBrandCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateBrandCommand request, CancellationToken cancellationToken)
     {
@@ -38,6 +39,9 @@ public class CreateBrandCommandHandler(
 
         await brandRepository.AddAsync(brand, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("brands", cancellationToken);
 
         return Result<Guid>.Success(brand.Id);
     }

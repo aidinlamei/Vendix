@@ -26,7 +26,8 @@ public record CategoryTranslationInput
 
 public class CreateCategoryCommandHandler(
     ICategoryRepository categoryRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<CreateCategoryCommand, Result<Guid>>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<CreateCategoryCommand, Result<Guid>>
 {
     public async Task<Result<Guid>> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
@@ -92,6 +93,9 @@ public class CreateCategoryCommandHandler(
 
         await categoryRepository.AddAsync(category, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("categories", cancellationToken);
 
         return Result<Guid>.Success(category.Id);
     }

@@ -12,7 +12,8 @@ public class DeleteBrandCommandHandler(
     IBrandRepository brandRepository,
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IRequestHandler<DeleteBrandCommand, Result>
+    ICurrentUserService currentUserService,
+    ICacheService cacheService) : IRequestHandler<DeleteBrandCommand, Result>
 {
     public async Task<Result> Handle(DeleteBrandCommand request, CancellationToken cancellationToken)
     {
@@ -34,6 +35,9 @@ public class DeleteBrandCommandHandler(
         
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("brands", cancellationToken);
 
         return Result.Success();
     }

@@ -17,7 +17,8 @@ public record UpdateBrandCommand : IRequest<Result>
 
 public class UpdateBrandCommandHandler(
     IBrandRepository brandRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<UpdateBrandCommand, Result>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<UpdateBrandCommand, Result>
 {
     public async Task<Result> Handle(UpdateBrandCommand request, CancellationToken cancellationToken)
     {
@@ -46,6 +47,9 @@ public class UpdateBrandCommandHandler(
 
         brandRepository.Update(brand);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("brands", cancellationToken);
 
         return Result.Success();
     }

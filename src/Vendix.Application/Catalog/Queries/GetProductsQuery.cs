@@ -1,6 +1,7 @@
 using MapsterMapper;
 using MediatR;
 using Vendix.Application.Catalog.DTOs;
+using Vendix.Application.Common.Attributes;
 using Vendix.Application.Common.Models;
 using Vendix.Domain.Catalog.Repositories;
 
@@ -16,6 +17,7 @@ namespace Vendix.Application.Catalog.Queries;
 /// <param name="BrandId">Optional brand filter.</param>
 /// <param name="MinPrice">Optional minimum price filter.</param>
 /// <param name="MaxPrice">Optional maximum price filter.</param>
+[CacheableQuery(Key = "products", ExpiryMinutes = 5)]
 public sealed record GetProductsQuery(
     int PageNumber = 1,
     int PageSize = 10,

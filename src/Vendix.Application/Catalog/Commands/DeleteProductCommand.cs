@@ -17,7 +17,8 @@ public sealed record DeleteProductCommand(Guid Id) : IRequest<Result>;
 /// </summary>
 public sealed class DeleteProductCommandHandler(
     IProductRepository productRepository,
-    IUnitOfWork unitOfWork) : IRequestHandler<DeleteProductCommand, Result>
+    IUnitOfWork unitOfWork,
+    ICacheService cacheService) : IRequestHandler<DeleteProductCommand, Result>
 {
     /// <inheritdoc />
     public async Task<Result> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
@@ -33,6 +34,9 @@ public sealed class DeleteProductCommandHandler(
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Invalidate cache
+        await cacheService.RemoveByPrefixAsync("products", cancellationToken);
 
         return Result.Success();
     }
