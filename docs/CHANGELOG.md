@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 5: LocalFileStorage Implementation (Date: 2025-12-28)
+
+**Added:**
+
+Infrastructure Layer - FileStorage:
+- `FileStorageSettings.cs` - Configuration class for file storage
+- `LocalFileStorage.cs` - IFileStorage implementation for local filesystem
+
+**Features:**
+- File upload with unique naming (GUID prefix)
+- File size validation (default 5MB max)
+- Extension validation (jpg, jpeg, png, webp, gif)
+- Filename sanitization
+- File deletion
+- Public URL generation
+- Existence check
+
+**Configuration:**
+- `FileStorage` section in appsettings.json
+- Configurable base path, URL, max size, allowed extensions
+
+**Tests:**
+- `LocalFileStorageTests.cs` - Unit tests for all operations
+
+**Technical Decisions:**
+- Files stored in wwwroot/uploads/{folder}/{guid}_{filename}
+- Relative paths stored in database, public URLs generated at runtime
+- No image resizing in Phase 2 (will add in Task 7 with ImageSharp)
+
+**Notes:**
+- TODO: Add image resizing/optimization in Task 7
+- TODO: Migrate to S3/Azure Blob in production phase
+
+---
+
 ### Phase 2 - Task 4: Brand Admin Pages (Date: 2025-12-28)
 
 **Added:**

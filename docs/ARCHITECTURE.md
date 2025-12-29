@@ -682,7 +682,7 @@ src/Vendix.Web/Components/Pages/Catalog/
 | 2 | Category Admin Pages | ✅ |
 | 3 | Brand Commands & Queries | ✅ |
 | 4 | Brand Admin Pages | ✅ |
-| 5 | LocalFileStorage Implementation | ⬜ |
+| 5 | LocalFileStorage Implementation | ✅ |
 | 6 | Product Admin Pages (Index, Create, Edit) | ⬜ |
 | 7 | Image Upload Component | ⬜ |
 | 8 | Cache Activation on Queries | ⬜ |

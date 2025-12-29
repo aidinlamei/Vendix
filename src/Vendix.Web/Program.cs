@@ -13,7 +13,7 @@ builder.Services.AddApplication();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddInfrastructure(connectionString, builder.Configuration);
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

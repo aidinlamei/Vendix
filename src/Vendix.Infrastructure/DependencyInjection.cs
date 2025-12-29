@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Domain.Catalog.Repositories;
 using Vendix.Infrastructure.Caching;
+using Vendix.Infrastructure.FileStorage;
 using Vendix.Infrastructure.Identity;
 using Vendix.Infrastructure.Persistence;
 using Vendix.Infrastructure.Persistence.Interceptors;
@@ -23,11 +25,13 @@ public static class DependencyInjection
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <param name="connectionString">The PostgreSQL connection string.</param>
+    /// <param name="configuration">The configuration instance.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when connectionString is null or empty.</exception>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        string connectionString)
+        string connectionString,
+        IConfiguration configuration)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
@@ -82,6 +86,10 @@ public static class DependencyInjection
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
+
+        // File Storage
+        services.Configure<FileStorageSettings>(configuration.GetSection(FileStorageSettings.SectionName));
+        services.AddScoped<IFileStorage, LocalFileStorage>();
 
         return services;
     }
