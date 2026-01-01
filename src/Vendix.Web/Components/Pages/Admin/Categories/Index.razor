@@ -80,12 +80,21 @@
                OnConfirm="DeleteCategory"
                OnCancel="() => _showDeleteConfirm = false" />
 
+@if (_showToast)
+{
+    <Toast Type="@_toastType" Title="@_toastTitle" Message="@_toastMessage" Duration="5000" OnClose="HandleToastClose" />
+}
+
 @code {
     private List<CategoryTreeDto> _categories = [];
     private bool _isLoading = true;
     private bool _showDeleteConfirm;
     private CategoryTreeDto? _categoryToDelete;
     private HashSet<Guid> _expandedIds = [];
+    private bool _showToast;
+    private string _toastType = "error";
+    private string _toastTitle = "Error";
+    private string _toastMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -127,8 +136,7 @@
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error deleting category: {ex.Message}");
+            ShowErrorToast("Failed to delete category", ex.Message);
         }
         finally
         {
@@ -157,6 +165,21 @@
             }
         }
         return ids;
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastType = "error";
+        _toastTitle = title;
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleToastClose()
+    {
+        _showToast = false;
+        StateHasChanged();
     }
 }
 

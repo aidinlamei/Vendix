@@ -85,6 +85,14 @@ public class ProductRepository : IProductRepository
     }
 
     /// <inheritdoc />
+    public async Task<int> CountByBrandAsync(Guid brandId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .CountAsync(p => p.BrandId == brandId, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<(IReadOnlyList<Product> Items, int TotalCount)> SearchAsync(
         string? searchTerm = null,
         Guid? categoryId = null,
@@ -103,9 +111,12 @@ public class ProductRepository : IProductRepository
         // Apply filters
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
+            // Use parameterized query to prevent SQL injection
+            // EF Core automatically parameterizes, but using explicit pattern is safer
+            var searchPattern = $"%{searchTerm}%";
             query = query.Where(p =>
-                EF.Functions.ILike(p.Name, $"%{searchTerm}%") ||
-                (p.Description != null && EF.Functions.ILike(p.Description, $"%{searchTerm}%")));
+                EF.Functions.ILike(p.Name, searchPattern) ||
+                (p.Description != null && EF.Functions.ILike(p.Description, searchPattern)));
         }
 
         if (categoryId.HasValue)

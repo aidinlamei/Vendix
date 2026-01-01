@@ -120,11 +120,20 @@
                OnConfirm="DeleteBrand"
                OnCancel="() => _showDeleteConfirm = false" />
 
+@if (_showToast)
+{
+    <Toast Type="@_toastType" Title="@_toastTitle" Message="@_toastMessage" Duration="5000" OnClose="HandleToastClose" />
+}
+
 @code {
     private List<BrandListDto> _brands = [];
     private bool _isLoading = true;
     private bool _showDeleteConfirm;
     private BrandListDto? _brandToDelete;
+    private bool _showToast;
+    private string _toastType = "error";
+    private string _toastTitle = "Error";
+    private string _toastMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,14 +175,28 @@
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error deleting brand: {ex.Message}");
+            ShowErrorToast("Failed to delete brand", ex.Message);
         }
         finally
         {
             _showDeleteConfirm = false;
             _brandToDelete = null;
         }
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastType = "error";
+        _toastTitle = title;
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleToastClose()
+    {
+        _showToast = false;
+        StateHasChanged();
     }
 }
 

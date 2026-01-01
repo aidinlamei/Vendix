@@ -56,7 +56,22 @@ public class UpdateCategoryCommandHandler(
                 throw new NotFoundException("Category", request.ParentId.Value);
             }
 
-            // TODO: Check for circular reference in hierarchy
+            // Check for circular reference in hierarchy
+            // Traverse up the parent chain to ensure the current category is not an ancestor of the new parent
+            var currentParent = parent;
+            var visitedIds = new HashSet<Guid> { request.Id }; // Include current category to prevent self-reference
+            
+            while (currentParent?.ParentCategoryId != null)
+            {
+                if (visitedIds.Contains(currentParent.ParentCategoryId.Value))
+                {
+                    throw new BusinessRuleException("CircularReference", 
+                        "Cannot set parent: this would create a circular reference in the category hierarchy");
+                }
+                
+                visitedIds.Add(currentParent.ParentCategoryId.Value);
+                currentParent = await categoryRepository.GetByIdAsync(currentParent.ParentCategoryId.Value, cancellationToken);
+            }
         }
 
         // Update category

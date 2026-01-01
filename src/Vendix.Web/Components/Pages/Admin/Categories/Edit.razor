@@ -166,6 +166,11 @@ else
     </div>
 }
 
+@if (_showToast)
+{
+    <Toast Type="@_toastType" Title="@_toastTitle" Message="@_toastMessage" Duration="5000" OnClose="HandleToastClose" />
+}
+
 @code {
     [Parameter]
     public Guid Id { get; set; }
@@ -175,6 +180,10 @@ else
     private List<CategoryTreeDto> _parentCategories = [];
     private bool _isLoading = true;
     private bool _isSubmitting;
+    private bool _showToast;
+    private string _toastType = "error";
+    private string _toastTitle = "Error";
+    private string _toastMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -274,8 +283,7 @@ else
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error updating category: {ex.Message}");
+            ShowErrorToast("Failed to update category", ex.Message);
         }
         finally
         {
@@ -297,6 +305,21 @@ else
         public string LanguageCode { get; set; } = "en";
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastType = "error";
+        _toastTitle = title;
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleToastClose()
+    {
+        _showToast = false;
+        StateHasChanged();
     }
 }
 

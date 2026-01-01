@@ -41,7 +41,7 @@
             <!-- Category Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select @bind="_selectedCategoryId" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select value="@_selectedCategoryIdString" @onchange="OnCategoryChanged" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="">All Categories</option>
                     @foreach (var category in _categories)
                     {
@@ -53,7 +53,7 @@
             <!-- Brand Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                <select @bind="_selectedBrandId" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select value="@_selectedBrandIdString" @onchange="OnBrandChanged" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="">All Brands</option>
                     @foreach (var brand in _brands)
                     {
@@ -137,7 +137,7 @@
                                 <span class="text-sm text-gray-600">@(product.CategoryName ?? "-")</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-medium text-gray-900">@product.Price.ToString("C")</span>
+                                <span class="text-sm font-medium text-gray-900">@($"{product.Price:N2} {product.Currency}")</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if (product.TotalStock <= 0)
@@ -196,6 +196,11 @@
                OnConfirm="DeleteProduct"
                OnCancel="() => _showDeleteConfirm = false" />
 
+@if (_showToast)
+{
+    <Toast Type="@_toastType" Title="@_toastTitle" Message="@_toastMessage" Duration="5000" OnClose="HandleToastClose" />
+}
+
 @code {
     private PaginatedList<ProductListDto> _products = PaginatedList<ProductListDto>.Empty();
     private List<CategoryListDto> _categories = [];
@@ -204,12 +209,32 @@
     private bool _isLoading = true;
     private bool _showDeleteConfirm;
     private ProductListDto? _productToDelete;
+    private bool _showToast;
+    private string _toastType = "error";
+    private string _toastTitle = "Error";
+    private string _toastMessage = string.Empty;
     
     private string _searchTerm = string.Empty;
-    private Guid? _selectedCategoryId;
-    private Guid? _selectedBrandId;
+    private string _selectedCategoryIdString = string.Empty;
+    private string _selectedBrandIdString = string.Empty;
     private int _currentPage = 1;
     private int _pageSize = 10;
+
+    private Guid? GetSelectedCategoryId()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedCategoryIdString))
+            return null;
+        
+        return Guid.TryParse(_selectedCategoryIdString, out var categoryId) ? categoryId : null;
+    }
+
+    private Guid? GetSelectedBrandId()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedBrandIdString))
+            return null;
+        
+        return Guid.TryParse(_selectedBrandIdString, out var brandId) ? brandId : null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,9 +256,7 @@
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error loading filters: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            ShowErrorToast("Failed to load filters", ex.Message);
         }
     }
 
@@ -246,8 +269,8 @@
                 PageNumber: _currentPage,
                 PageSize: _pageSize,
                 SearchTerm: string.IsNullOrWhiteSpace(_searchTerm) ? null : _searchTerm,
-                CategoryId: _selectedCategoryId,
-                BrandId: _selectedBrandId
+                CategoryId: GetSelectedCategoryId(),
+                BrandId: GetSelectedBrandId()
             ));
         }
         finally
@@ -268,6 +291,16 @@
         {
             await ApplyFilters();
         }
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        _selectedCategoryIdString = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnBrandChanged(ChangeEventArgs e)
+    {
+        _selectedBrandIdString = e.Value?.ToString() ?? string.Empty;
     }
 
     private async Task OnPageChanged(int page)
@@ -298,14 +331,28 @@
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error deleting product: {ex.Message}");
+            ShowErrorToast("Failed to delete product", ex.Message);
         }
         finally
         {
             _showDeleteConfirm = false;
             _productToDelete = null;
         }
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastType = "error";
+        _toastTitle = title;
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleToastClose()
+    {
+        _showToast = false;
+        StateHasChanged();
     }
 }
 

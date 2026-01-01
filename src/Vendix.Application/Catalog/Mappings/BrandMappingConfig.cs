@@ -9,12 +9,12 @@ public class BrandMappingConfig : IRegister
     public void Register(TypeAdapterConfig config)
     {
         config.NewConfig<Brand, BrandDto>()
-            .Map(dest => dest.Slug, src => src.Slug.Value)
-            .Map(dest => dest.ProductCount, src => 0); // TODO: Add product count via repository
+            .Map(dest => dest.Slug, src => src.Slug.Value);
+            // ProductCount is set in Query handlers, not in mapping
 
         config.NewConfig<Brand, BrandListDto>()
-            .Map(dest => dest.Slug, src => src.Slug.Value)
-            .Map(dest => dest.ProductCount, src => 0); // TODO: Add product count via repository
+            .Map(dest => dest.Slug, src => src.Slug.Value);
+            // ProductCount is set in Query handlers, not in mapping
 
         config.NewConfig<Brand, BrandSelectDto>();
     }

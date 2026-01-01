@@ -158,10 +158,19 @@
     </div>
 </div>
 
+@if (_showToast)
+{
+    <Toast Type="@_toastType" Title="@_toastTitle" Message="@_toastMessage" Duration="5000" OnClose="HandleToastClose" />
+}
+
 @code {
     private CategoryFormModel _model = new();
     private List<CategoryTreeDto> _parentCategories = [];
     private bool _isSubmitting;
+    private bool _showToast;
+    private string _toastType = "error";
+    private string _toastTitle = "Error";
+    private string _toastMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -225,8 +234,7 @@
         }
         catch (Exception ex)
         {
-            // TODO: Show error toast
-            Console.WriteLine($"Error creating category: {ex.Message}");
+            ShowErrorToast("Failed to create category", ex.Message);
         }
         finally
         {
@@ -248,6 +256,21 @@
         public string LanguageCode { get; set; } = "en";
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+    }
+
+    private void ShowErrorToast(string title, string message)
+    {
+        _toastType = "error";
+        _toastTitle = title;
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+    }
+
+    private void HandleToastClose()
+    {
+        _showToast = false;
+        StateHasChanged();
     }
 }
 

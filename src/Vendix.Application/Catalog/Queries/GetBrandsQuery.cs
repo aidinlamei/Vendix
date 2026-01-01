@@ -10,12 +10,22 @@ namespace Vendix.Application.Catalog.Queries;
 public record GetBrandsQuery : IRequest<List<BrandListDto>>;
 
 public class GetBrandsQueryHandler(
-    IBrandRepository brandRepository) : IRequestHandler<GetBrandsQuery, List<BrandListDto>>
+    IBrandRepository brandRepository,
+    IProductRepository productRepository) : IRequestHandler<GetBrandsQuery, List<BrandListDto>>
 {
     public async Task<List<BrandListDto>> Handle(GetBrandsQuery request, CancellationToken cancellationToken)
     {
         var brands = await brandRepository.GetAllAsync(cancellationToken);
-        return brands.Adapt<List<BrandListDto>>();
+        var brandDtos = new List<BrandListDto>();
+
+        foreach (var brand in brands)
+        {
+            var productCount = await productRepository.CountByBrandAsync(brand.Id, cancellationToken);
+            var dto = brand.Adapt<BrandListDto>();
+            brandDtos.Add(dto with { ProductCount = productCount });
+        }
+
+        return brandDtos;
     }
 }
 
