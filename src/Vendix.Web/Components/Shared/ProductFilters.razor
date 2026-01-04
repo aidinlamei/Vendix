@@ -1,0 +1,128 @@
+@using Vendix.Application.Catalog.DTOs
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <h2 class="font-bold text-gray-900 mb-4">Filters</h2>
+
+    <!-- Categories -->
+    <div class="mb-6">
+        <h3 class="font-medium text-gray-900 mb-2">Category</h3>
+        <div class="space-y-2">
+            <label class="flex items-center">
+                <input type="radio" name="category" checked="@(SelectedCategoryId is null)"
+                       @onchange="() => SelectCategory(null)"
+                       class="text-primary-600 focus:ring-primary-500" />
+                <span class="ml-2 text-sm text-gray-600">All Categories</span>
+            </label>
+            @foreach (var category in Categories)
+            {
+                <label class="flex items-center">
+                    <input type="radio" name="category" checked="@(SelectedCategoryId == category.Id)"
+                           @onchange="() => SelectCategory(category.Id)"
+                           class="text-primary-600 focus:ring-primary-500" />
+                    <span class="ml-2 text-sm text-gray-600">@category.Name</span>
+                </label>
+            }
+        </div>
+    </div>
+
+    <!-- Brands -->
+    <div class="mb-6">
+        <h3 class="font-medium text-gray-900 mb-2">Brand</h3>
+        <div class="space-y-2 max-h-48 overflow-y-auto">
+            <label class="flex items-center">
+                <input type="checkbox" checked="@(SelectedBrandId is null)"
+                       @onchange="() => SelectBrand(null)"
+                       class="rounded text-primary-600 focus:ring-primary-500" />
+                <span class="ml-2 text-sm text-gray-600">All Brands</span>
+            </label>
+            @foreach (var brand in Brands)
+            {
+                <label class="flex items-center">
+                    <input type="checkbox" checked="@(SelectedBrandId == brand.Id)"
+                           @onchange="() => SelectBrand(brand.Id)"
+                           class="rounded text-primary-600 focus:ring-primary-500" />
+                    <span class="ml-2 text-sm text-gray-600">@brand.Name</span>
+                </label>
+            }
+        </div>
+    </div>
+
+    <!-- Price Range -->
+    <div class="mb-6">
+        <h3 class="font-medium text-gray-900 mb-2">Price Range</h3>
+        <div class="flex items-center gap-2">
+            <input type="number" placeholder="Min" @bind="_minPrice" @bind:after="ApplyPriceFilter"
+                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500" />
+            <span class="text-gray-400">-</span>
+            <input type="number" placeholder="Max" @bind="_maxPrice" @bind:after="ApplyPriceFilter"
+                   class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500" />
+        </div>
+    </div>
+
+    <!-- Clear Filters -->
+    <button @onclick="ClearFilters" 
+            class="w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium">
+        Clear all filters
+    </button>
+</div>
+
+@code {
+    [Parameter] public List<CategoryListDto> Categories { get; set; } = new();
+    [Parameter] public List<BrandListDto> Brands { get; set; } = new();
+    [Parameter] public Guid? SelectedCategoryId { get; set; }
+    [Parameter] public Guid? SelectedBrandId { get; set; }
+    [Parameter] public decimal? MinPrice { get; set; }
+    [Parameter] public decimal? MaxPrice { get; set; }
+    [Parameter] public EventCallback<FilterChangedEventArgs> OnFilterChanged { get; set; }
+
+    private decimal? _minPrice;
+    private decimal? _maxPrice;
+
+    protected override void OnParametersSet()
+    {
+        _minPrice = MinPrice;
+        _maxPrice = MaxPrice;
+    }
+
+    private async Task SelectCategory(Guid? categoryId)
+    {
+        SelectedCategoryId = categoryId;
+        await NotifyFilterChanged();
+    }
+
+    private async Task SelectBrand(Guid? brandId)
+    {
+        SelectedBrandId = brandId;
+        await NotifyFilterChanged();
+    }
+
+    private async Task ApplyPriceFilter()
+    {
+        MinPrice = _minPrice;
+        MaxPrice = _maxPrice;
+        await NotifyFilterChanged();
+    }
+
+    private async Task ClearFilters()
+    {
+        SelectedCategoryId = null;
+        SelectedBrandId = null;
+        _minPrice = null;
+        _maxPrice = null;
+        MinPrice = null;
+        MaxPrice = null;
+        await NotifyFilterChanged();
+    }
+
+    private async Task NotifyFilterChanged()
+    {
+        await OnFilterChanged.InvokeAsync(new FilterChangedEventArgs
+        {
+            CategoryId = SelectedCategoryId,
+            BrandId = SelectedBrandId,
+            MinPrice = MinPrice,
+            MaxPrice = MaxPrice
+        });
+    }
+}
+

@@ -1,0 +1,29 @@
+<span class="@GetSizeClass()">
+    <span class="@GetCurrencyClass()">@GetCurrencySymbol()</span>
+    <span class="font-bold">@Price.ToString("N0")</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public decimal Price { get; set; }
+    [Parameter] public string Currency { get; set; } = "USD";
+    [Parameter] public string Size { get; set; } = "normal"; // normal, large
+
+    private string GetCurrencySymbol() => Currency switch
+    {
+        "USD" => "$",
+        "EUR" => "€",
+        "IRR" => "تومان",
+        _ => Currency
+    };
+
+    private string GetSizeClass() => Size switch
+    {
+        "large" => "text-2xl text-gray-900",
+        _ => "text-lg text-gray-900"
+    };
+
+    private string GetCurrencyClass() => Currency == "IRR" 
+        ? "text-sm mr-1" 
+        : "";
+}
+

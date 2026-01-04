@@ -1,0 +1,288 @@
+@page "/products"
+@page "/products/category/{CategorySlug}"
+@page "/products/brand/{BrandSlug}"
+@using Vendix.Application.Catalog.Queries
+@using Vendix.Application.Catalog.DTOs
+@using Vendix.Application.Common.Models
+@using Vendix.Web.Components.Shared
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Products - Vendix</PageTitle>
+
+<div class="bg-gray-50 min-h-screen">
+    <!-- Breadcrumb -->
+    <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <nav class="flex text-sm text-gray-500">
+                <a href="/" class="hover:text-primary-600">Home</a>
+                <span class="mx-2">/</span>
+                <span class="text-gray-900">Products</span>
+                @if (_currentCategory is not null)
+                {
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-900">@_currentCategory.Name</span>
+                }
+                @if (_currentBrand is not null)
+                {
+                    <span class="mx-2">/</span>
+                    <span class="text-gray-900">@_currentBrand.Name</span>
+                }
+            </nav>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Filters Sidebar -->
+            <aside class="w-full lg:w-64 flex-shrink-0">
+                <ProductFilters 
+                    Categories="_categories"
+                    Brands="_brands"
+                    SelectedCategoryId="_filter.CategoryId"
+                    SelectedBrandId="_filter.BrandId"
+                    MinPrice="_filter.MinPrice"
+                    MaxPrice="_filter.MaxPrice"
+                    OnFilterChanged="HandleFilterChanged" />
+            </aside>
+
+            <!-- Products Grid -->
+            <main class="flex-1">
+                <!-- Header with count and sort -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <p class="text-gray-600 mb-4 sm:mb-0">
+                        @if (_products is not null)
+                        {
+                            <span>Showing @_products.Items.Count of @_products.TotalCount products</span>
+                        }
+                    </p>
+                    
+                    <!-- Sort dropdown -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-gray-600">Sort by:</label>
+                        <select @bind="_sortBy" @bind:after="LoadProducts" 
+                                class="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500">
+                            <option value="newest">Newest</option>
+                            <option value="price-asc">Price: Low to High</option>
+                            <option value="price-desc">Price: High to Low</option>
+                            <option value="name">Name A-Z</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                @if (_isLoading)
+                {
+                    <div class="flex justify-center py-12">
+                        <LoadingSpinner Size="large" />
+                    </div>
+                }
+                <!-- Empty State -->
+                else if (_products is null || _products.Items.Count == 0)
+                {
+                    <div class="text-center py-12 bg-white rounded-lg">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No products found</h3>
+                        <p class="mt-2 text-gray-500">Try adjusting your filters or search criteria.</p>
+                        <button @onclick="ClearFilters" class="mt-4 text-primary-600 hover:text-primary-700 font-medium">
+                            Clear all filters
+                        </button>
+                    </div>
+                }
+                <!-- Products Grid -->
+                else
+                {
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @foreach (var product in _products.Items)
+                        {
+                            <ProductCard Product="product" />
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (_products.TotalPages > 1)
+                    {
+                        <div class="mt-8">
+                            <Pagination CurrentPage="_products.PageNumber"
+                                        TotalItems="_products.TotalCount"
+                                        PageSize="_pageSize"
+                                        OnPageChange="HandlePageChanged" />
+                        </div>
+                    }
+                }
+            </main>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? CategorySlug { get; set; }
+    [Parameter] public string? BrandSlug { get; set; }
+    
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    [SupplyParameterFromQuery] public int? Page { get; set; }
+
+    private PaginatedList<ProductListDto>? _products;
+    private List<CategoryListDto> _categories = new();
+    private List<BrandListDto> _brands = new();
+    private CategoryDto? _currentCategory;
+    private BrandDto? _currentBrand;
+    
+    private bool _isLoading = true;
+    private int _pageSize = 12;
+    private string _sortBy = "newest";
+
+    private FilterModel _filter = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFiltersData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Handle route parameters
+        if (!string.IsNullOrEmpty(CategorySlug))
+        {
+            try
+            {
+                var category = await Mediator.Send(new GetCategoryBySlugQuery(CategorySlug));
+                if (category is not null)
+                {
+                    _currentCategory = category;
+                    _filter.CategoryId = category.Id;
+                }
+            }
+            catch
+            {
+                // Category not found, ignore
+            }
+        }
+        
+        if (!string.IsNullOrEmpty(BrandSlug))
+        {
+            try
+            {
+                var brand = await Mediator.Send(new GetBrandBySlugQuery(BrandSlug));
+                if (brand is not null)
+                {
+                    _currentBrand = brand;
+                    _filter.BrandId = brand.Id;
+                }
+            }
+            catch
+            {
+                // Brand not found, ignore
+            }
+        }
+
+        _filter.SearchTerm = Search;
+        
+        await LoadProducts();
+    }
+
+    private async Task LoadFiltersData()
+    {
+        var categoriesTask = Mediator.Send(new GetCategoriesQuery());
+        var brandsTask = Mediator.Send(new GetBrandsQuery());
+
+        await Task.WhenAll(categoriesTask, brandsTask);
+
+        _categories = await categoriesTask;
+        _brands = await brandsTask;
+    }
+
+    private async Task LoadProducts()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var query = new GetProductsQuery(
+                PageNumber: Page ?? 1,
+                PageSize: _pageSize,
+                SearchTerm: _filter.SearchTerm,
+                CategoryId: _filter.CategoryId,
+                BrandId: _filter.BrandId,
+                MinPrice: _filter.MinPrice,
+                MaxPrice: _filter.MaxPrice
+            );
+
+            _products = await Mediator.Send(query);
+            
+            // TODO: Apply sorting (currently not supported by query, would need to add SortBy parameter)
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleFilterChanged(FilterChangedEventArgs args)
+    {
+        _filter.CategoryId = args.CategoryId;
+        _filter.BrandId = args.BrandId;
+        _filter.MinPrice = args.MinPrice;
+        _filter.MaxPrice = args.MaxPrice;
+        
+        Page = 1; // Reset to first page when filter changes
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private async Task HandlePageChanged(int page)
+    {
+        Page = page;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private void UpdateUrl()
+    {
+        var queryParams = new List<string>();
+        
+        if (!string.IsNullOrEmpty(_filter.SearchTerm))
+            queryParams.Add($"search={Uri.EscapeDataString(_filter.SearchTerm)}");
+        if (Page > 1)
+            queryParams.Add($"page={Page}");
+
+        var url = "/products";
+        if (_currentCategory is not null)
+            url = $"/products/category/{_currentCategory.Slug}";
+        else if (_currentBrand is not null)
+            url = $"/products/brand/{_currentBrand.Slug}";
+
+        if (queryParams.Any())
+            url += "?" + string.Join("&", queryParams);
+
+        Navigation.NavigateTo(url, replace: true);
+    }
+
+    private async Task ClearFilters()
+    {
+        _filter = new FilterModel();
+        _currentCategory = null;
+        _currentBrand = null;
+        CategorySlug = null;
+        BrandSlug = null;
+        Search = null;
+        Page = null;
+        
+        Navigation.NavigateTo("/products", replace: true);
+        await LoadProducts();
+    }
+
+    private class FilterModel
+    {
+        public string? SearchTerm { get; set; }
+        public Guid? CategoryId { get; set; }
+        public Guid? BrandId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+    }
+}
+

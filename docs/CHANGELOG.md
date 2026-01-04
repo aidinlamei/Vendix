@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Tasks 9-11: Public Catalog Pages (Date: 2025-01-02)
+
+**Added:**
+
+Public Catalog Pages (src/Vendix.Web/Components/Pages/Catalog/):
+- `Products.razor` - Product listing with filters, search, sort, pagination
+- `ProductDetail.razor` - Single product view with gallery, specs, add to cart
+- `Category.razor` - Category page with subcategories and products
+
+Shared Components (src/Vendix.Web/Components/Shared/):
+- `ProductCard.razor` - Reusable product card for grids
+- `ProductFilters.razor` - Filter sidebar (category, brand, price)
+- `PriceDisplay.razor` - Price formatting with currency support
+
+**Routes:**
+- `/products` - All products
+- `/products/category/{slug}` - Products by category
+- `/products/brand/{slug}` - Products by brand
+- `/product/{slug}` - Product detail
+- `/category/{slug}` - Category page with header
+
+**Features:**
+- Responsive grid layout (1-4 columns)
+- Filter by category, brand, price range
+- Sort by newest, price, name (UI ready, backend TODO)
+- Pagination with page size 12
+- Image gallery with thumbnails
+- Stock status indicators
+- Quantity selector
+- Multi-language translation support (EN/FA)
+- SEO-friendly URLs
+- Breadcrumb navigation
+
+**DTOs Updated:**
+- ProductListDto: Added CategorySlug, BrandSlug
+- ProductDto: Added CategorySlug, BrandSlug
+
+**Technical Decisions:**
+- Products.razor handles multiple route patterns
+- ProductCard is reusable across all listing pages
+- PriceDisplay handles multiple currencies (USD, EUR, IRR)
+- Add to Cart is UI-only (Phase 3 implementation)
+- Filter state persisted in URL query parameters
+- ProductDetail calculates TotalStock from variants
+
+**Notes:**
+- TODO: Implement Add to Cart functionality (Phase 3)
+- TODO: Add product reviews/ratings (Phase 5)
+- TODO: Add related products section
+- TODO: Add recently viewed products
+- TODO: Implement sorting in GetProductsQuery handler
+
 ### Phase 2 - Task 8: Cache Activation on Queries (Date: 2025-12-29)
 
 **Added:**

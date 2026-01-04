@@ -24,8 +24,10 @@ public sealed class ProductMappingConfig : IRegister
             .Map(dest => dest.ProductType, src => src.ProductType)
             .Map(dest => dest.CategoryId, src => src.CategoryId)
             .Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null)
+            .Map(dest => dest.CategorySlug, src => src.Category != null ? src.Category.Slug.Value : null)
             .Map(dest => dest.BrandId, src => src.BrandId)
             .Map(dest => dest.BrandName, src => src.Brand != null ? src.Brand.Name : null)
+            .Map(dest => dest.BrandSlug, src => src.Brand != null ? src.Brand.Slug.Value : null)
             .Map(dest => dest.MainImageUrl, src => src.Images
                 .Where(i => i.IsMain)
                 .Select(i => i.Url)
@@ -51,7 +53,9 @@ public sealed class ProductMappingConfig : IRegister
                 .Select(i => i.Url)
                 .FirstOrDefault())
             .Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.Name : null)
+            .Map(dest => dest.CategorySlug, src => src.Category != null ? src.Category.Slug.Value : null)
             .Map(dest => dest.BrandName, src => src.Brand != null ? src.Brand.Name : null)
+            .Map(dest => dest.BrandSlug, src => src.Brand != null ? src.Brand.Slug.Value : null)
             .Map(dest => dest.TotalStock, src => src.Variants.Sum(v => v.StockQuantity))
             .Map(dest => dest.IsActive, src => !src.IsDeleted);
 

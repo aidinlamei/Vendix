@@ -1,0 +1,140 @@
+@page "/category/{Slug}"
+@using Vendix.Application.Catalog.Queries
+@using Vendix.Application.Catalog.DTOs
+@using Vendix.Application.Common.Models
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>@(_category?.Name ?? "Category") - Vendix</PageTitle>
+
+@if (_isLoading)
+{
+    <div class="flex justify-center py-24">
+        <LoadingSpinner Size="large" />
+    </div>
+}
+else if (_category is null)
+{
+    <div class="max-w-7xl mx-auto px-4 py-16 text-center">
+        <h1 class="text-2xl font-bold text-gray-900">Category not found</h1>
+        <a href="/products" class="mt-4 inline-block text-primary-600 hover:text-primary-700">
+            Browse all products
+        </a>
+    </div>
+}
+else
+{
+    <!-- Category Header -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 py-12">
+            <nav class="text-sm text-primary-200 mb-4">
+                <a href="/" class="hover:text-white">Home</a>
+                <span class="mx-2">/</span>
+                <a href="/products" class="hover:text-white">Products</a>
+                <span class="mx-2">/</span>
+                <span class="text-white">@_category.Name</span>
+            </nav>
+            <h1 class="text-3xl font-bold">@_category.Name</h1>
+            @if (!string.IsNullOrEmpty(_category.Description))
+            {
+                <p class="mt-2 text-primary-100 max-w-2xl">@_category.Description</p>
+            }
+        </div>
+    </div>
+
+    <!-- Subcategories -->
+    @if (_category.Children?.Any() == true)
+    {
+        <div class="bg-white border-b">
+            <div class="max-w-7xl mx-auto px-4 py-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Subcategories</h2>
+                <div class="flex flex-wrap gap-3">
+                    @foreach (var child in _category.Children)
+                    {
+                        <a href="/category/@child.Slug" 
+                           class="px-4 py-2 bg-gray-100 rounded-full text-sm hover:bg-primary-100 hover:text-primary-700 transition">
+                            @child.Name
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Products -->
+    <div class="bg-gray-50 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            @if (_products is null || _products.Items.Count == 0)
+            {
+                <div class="text-center py-12 bg-white rounded-lg">
+                    <p class="text-gray-500">No products in this category yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    @foreach (var product in _products.Items)
+                    {
+                        <ProductCard Product="product" />
+                    }
+                </div>
+
+                @if (_products.TotalPages > 1)
+                {
+                    <div class="mt-8">
+                        <Pagination CurrentPage="_products.PageNumber"
+                                    TotalItems="_products.TotalCount"
+                                    PageSize="12"
+                                    OnPageChange="HandlePageChanged" />
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+    [SupplyParameterFromQuery] public int? Page { get; set; }
+
+    private CategoryDto? _category;
+    private PaginatedList<ProductListDto>? _products;
+    private bool _isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _category = await Mediator.Send(new GetCategoryBySlugQuery(Slug));
+            
+            if (_category is not null)
+            {
+                _products = await Mediator.Send(new GetProductsQuery(
+                    PageNumber: Page ?? 1,
+                    PageSize: 12,
+                    CategoryId: _category.Id
+                ));
+            }
+        }
+        catch
+        {
+            // Category not found - handled in UI
+            _category = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandlePageChanged(int page)
+    {
+        Page = page;
+        Navigation.NavigateTo($"/category/{Slug}?page={page}", replace: true);
+        await OnParametersSetAsync();
+    }
+}
+

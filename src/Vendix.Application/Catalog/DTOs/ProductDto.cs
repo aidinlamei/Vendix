@@ -63,6 +63,11 @@ public sealed record ProductDto
     public string? CategoryName { get; init; }
 
     /// <summary>
+    /// Gets the category slug.
+    /// </summary>
+    public string? CategorySlug { get; init; }
+
+    /// <summary>
     /// Gets the brand ID.
     /// </summary>
     public Guid? BrandId { get; init; }
@@ -71,6 +76,11 @@ public sealed record ProductDto
     /// Gets the brand name.
     /// </summary>
     public string? BrandName { get; init; }
+
+    /// <summary>
+    /// Gets the brand slug.
+    /// </summary>
+    public string? BrandSlug { get; init; }
 
     /// <summary>
     /// Gets the main image URL.
@@ -164,9 +174,19 @@ public sealed record ProductListDto
     public string? CategoryName { get; init; }
 
     /// <summary>
+    /// Gets the category slug.
+    /// </summary>
+    public string? CategorySlug { get; init; }
+
+    /// <summary>
     /// Gets the brand name.
     /// </summary>
     public string? BrandName { get; init; }
+
+    /// <summary>
+    /// Gets the brand slug.
+    /// </summary>
+    public string? BrandSlug { get; init; }
 
     /// <summary>
     /// Gets the total stock quantity (sum of all variant stocks).
