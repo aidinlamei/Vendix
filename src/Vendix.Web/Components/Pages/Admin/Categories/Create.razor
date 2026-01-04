@@ -5,6 +5,7 @@
 @using Vendix.Application.Catalog.Commands
 @using Vendix.Application.Catalog.DTOs
 @using Vendix.Application.Catalog.Queries
+@using Vendix.Application.Common.Exceptions
 @using Vendix.Web.Components.Shared
 @inject IMediator Mediator
 @inject NavigationManager Navigation
@@ -231,6 +232,16 @@
             {
                 Navigation.NavigateTo("/admin/categories");
             }
+            else
+            {
+                ShowErrorToast("Failed to create category", result.Error ?? "Unknown error occurred");
+            }
+        }
+        catch (ValidationException ex)
+        {
+            var errorMessages = ex.Errors.SelectMany(e => e.Value).ToList();
+            var errorMessage = string.Join("; ", errorMessages);
+            ShowErrorToast("Validation failed", errorMessage);
         }
         catch (Exception ex)
         {

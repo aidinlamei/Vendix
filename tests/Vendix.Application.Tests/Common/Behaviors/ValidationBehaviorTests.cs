@@ -39,14 +39,14 @@ public class ValidationBehaviorTests
         var expectedResponse = new TestResponse(true);
         var nextCalled = false;
 
-        Task<TestResponse> Next()
+        RequestHandlerDelegate<TestResponse> next = (CancellationToken ct) =>
         {
             nextCalled = true;
             return Task.FromResult(expectedResponse);
-        }
+        };
 
         // Act
-        var result = await behavior.Handle(request, Next, CancellationToken.None);
+        var result = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         nextCalled.Should().BeTrue();
@@ -61,10 +61,10 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, TestResponse>(validators);
         var request = new TestRequest("", -1); // Invalid: empty name and negative value
 
-        Task<TestResponse> Next() => Task.FromResult(new TestResponse(true));
+        RequestHandlerDelegate<TestResponse> next = (CancellationToken ct) => Task.FromResult(new TestResponse(true));
 
         // Act
-        var act = () => behavior.Handle(request, Next, CancellationToken.None);
+        var act = () => behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         var exception = await act.Should().ThrowAsync<ValidationException>();
@@ -82,14 +82,14 @@ public class ValidationBehaviorTests
         var expectedResponse = new TestResponse(true);
         var nextCalled = false;
 
-        Task<TestResponse> Next()
+        RequestHandlerDelegate<TestResponse> next = (CancellationToken ct) =>
         {
             nextCalled = true;
             return Task.FromResult(expectedResponse);
-        }
+        };
 
         // Act
-        var result = await behavior.Handle(request, Next, CancellationToken.None);
+        var result = await behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         nextCalled.Should().BeTrue();
@@ -104,10 +104,10 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, TestResponse>(validators);
         var request = new TestRequest("Valid Name", -1); // Only value is invalid
 
-        Task<TestResponse> Next() => Task.FromResult(new TestResponse(true));
+        RequestHandlerDelegate<TestResponse> next = (CancellationToken ct) => Task.FromResult(new TestResponse(true));
 
         // Act
-        var act = () => behavior.Handle(request, Next, CancellationToken.None);
+        var act = () => behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         var exception = await act.Should().ThrowAsync<ValidationException>();
@@ -133,10 +133,10 @@ public class ValidationBehaviorTests
         var behavior = new ValidationBehavior<TestRequest, TestResponse>(validators);
         var request = new TestRequest("TooLongName", 10); // Valid for first validator, invalid for second
 
-        Task<TestResponse> Next() => Task.FromResult(new TestResponse(true));
+        RequestHandlerDelegate<TestResponse> next = (CancellationToken ct) => Task.FromResult(new TestResponse(true));
 
         // Act
-        var act = () => behavior.Handle(request, Next, CancellationToken.None);
+        var act = () => behavior.Handle(request, next, CancellationToken.None);
 
         // Assert
         var exception = await act.Should().ThrowAsync<ValidationException>();

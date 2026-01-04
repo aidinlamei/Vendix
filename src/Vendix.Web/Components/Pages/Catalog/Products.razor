@@ -96,14 +96,14 @@
                 else if (_products is not null && _products.Items is not null)
                 {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach (var product in _products.Items)
+                        @foreach (var product in _products!.Items!)
                         {
                             <ProductCard Product="product" />
                         }
                     </div>
 
                     <!-- Pagination -->
-                    @if (_products.TotalPages > 1)
+                    @if (_products!.TotalPages > 1)
                     {
                         <div class="mt-8">
                             <Pagination CurrentPage="_products.PageNumber"
@@ -214,7 +214,19 @@
 
             _products = await Mediator.Send(query);
             
+            // Ensure Items is not null
+            if (_products?.Items is null)
+            {
+                _products = PaginatedList<ProductListDto>.Empty(Page ?? 1, _pageSize);
+            }
+            
             // TODO: Apply sorting (currently not supported by query, would need to add SortBy parameter)
+        }
+        catch (Exception ex)
+        {
+            // Log error and set empty result
+            Console.WriteLine($"Error loading products: {ex.Message}");
+            _products = PaginatedList<ProductListDto>.Empty(Page ?? 1, _pageSize);
         }
         finally
         {
@@ -225,10 +237,48 @@
 
     private async Task HandleFilterChanged(FilterChangedEventArgs args)
     {
+        if (args is null) return;
+        
+        // Update filter values
         _filter.CategoryId = args.CategoryId;
         _filter.BrandId = args.BrandId;
         _filter.MinPrice = args.MinPrice;
         _filter.MaxPrice = args.MaxPrice;
+        
+        // Update current category/brand based on filter
+        if (args.CategoryId.HasValue && _currentCategory?.Id != args.CategoryId.Value)
+        {
+            var category = _categories.FirstOrDefault(c => c.Id == args.CategoryId.Value);
+            if (category is not null)
+            {
+                _currentCategory = await Mediator.Send(new GetCategoryBySlugQuery(category.Slug));
+            }
+            else
+            {
+                _currentCategory = null;
+            }
+        }
+        else if (!args.CategoryId.HasValue)
+        {
+            _currentCategory = null;
+        }
+        
+        if (args.BrandId.HasValue && _currentBrand?.Id != args.BrandId.Value)
+        {
+            var brand = _brands.FirstOrDefault(b => b.Id == args.BrandId.Value);
+            if (brand is not null)
+            {
+                _currentBrand = await Mediator.Send(new GetBrandBySlugQuery(brand.Slug));
+            }
+            else
+            {
+                _currentBrand = null;
+            }
+        }
+        else if (!args.BrandId.HasValue)
+        {
+            _currentBrand = null;
+        }
         
         Page = 1; // Reset to first page when filter changes
         await LoadProducts();

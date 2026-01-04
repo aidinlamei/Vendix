@@ -51,7 +51,7 @@ public class ProductRepository : IProductRepository
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(p => p.Slug.Value == slug.ToLowerInvariant(), cancellationToken);
+            .FirstOrDefaultAsync(p => EF.Property<string>(p, nameof(Product.Slug)) == slug.ToLowerInvariant(), cancellationToken);
     }
 
     /// <inheritdoc />

@@ -29,6 +29,12 @@ public class UpdateBrandCommandValidator : AbstractValidator<UpdateBrandCommand>
     private static bool BeAValidUrl(string? url)
     {
         if (string.IsNullOrEmpty(url)) return true;
+        
+        // Accept relative URLs (starting with /)
+        if (url.StartsWith("/"))
+            return true;
+        
+        // Accept absolute URLs (http/https)
         return Uri.TryCreate(url, UriKind.Absolute, out var result) 
                && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
     }

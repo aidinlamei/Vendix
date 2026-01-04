@@ -35,9 +35,10 @@ public class CategoryRepository : ICategoryRepository
     /// <inheritdoc />
     public async Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
+        var normalizedSlug = slug.ToLowerInvariant();
         return await _context.Categories
             .Include(c => c.Translations)
-            .FirstOrDefaultAsync(c => c.Slug.Value == slug.ToLowerInvariant(), cancellationToken);
+            .FirstOrDefaultAsync(c => EF.Property<string>(c, nameof(Category.Slug)) == normalizedSlug, cancellationToken);
     }
 
     /// <inheritdoc />
