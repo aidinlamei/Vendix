@@ -245,7 +245,12 @@
         }
         catch (Exception ex)
         {
-            ShowErrorToast("Failed to create category", ex.Message);
+            var errorMessage = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorMessage += $"\n{ex.InnerException.Message}";
+            }
+            ShowErrorToast("Failed to create category", errorMessage);
         }
         finally
         {

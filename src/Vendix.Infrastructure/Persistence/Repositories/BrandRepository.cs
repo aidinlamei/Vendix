@@ -34,8 +34,11 @@ public class BrandRepository : IBrandRepository
     public async Task<Brand?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = slug.ToLowerInvariant();
-        return await _context.Brands
-            .FirstOrDefaultAsync(b => EF.Property<string>(b, nameof(Brand.Slug)) == normalizedSlug, cancellationToken);
+        // Load all brands and filter in memory because EF Core can't translate Slug.Value directly
+        var brands = await _context.Brands
+            .ToListAsync(cancellationToken);
+        
+        return brands.FirstOrDefault(b => b.Slug.Value.ToLowerInvariant() == normalizedSlug);
     }
 
     /// <inheritdoc />

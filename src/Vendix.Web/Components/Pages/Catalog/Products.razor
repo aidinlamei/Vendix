@@ -186,13 +186,9 @@
 
     private async Task LoadFiltersData()
     {
-        var categoriesTask = Mediator.Send(new GetCategoriesQuery());
-        var brandsTask = Mediator.Send(new GetBrandsQuery());
-
-        await Task.WhenAll(categoriesTask, brandsTask);
-
-        _categories = await categoriesTask;
-        _brands = await brandsTask;
+        // Execute sequentially to avoid DbContext concurrency issues
+        _categories = await Mediator.Send(new GetCategoriesQuery());
+        _brands = await Mediator.Send(new GetBrandsQuery());
     }
 
     private async Task LoadProducts()

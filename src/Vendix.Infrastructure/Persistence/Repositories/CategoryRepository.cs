@@ -36,9 +36,12 @@ public class CategoryRepository : ICategoryRepository
     public async Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = slug.ToLowerInvariant();
-        return await _context.Categories
+        // Load all categories and filter in memory because EF Core can't translate Slug.Value directly
+        var categories = await _context.Categories
             .Include(c => c.Translations)
-            .FirstOrDefaultAsync(c => EF.Property<string>(c, nameof(Category.Slug)) == normalizedSlug, cancellationToken);
+            .ToListAsync(cancellationToken);
+        
+        return categories.FirstOrDefault(c => c.Slug.Value.ToLowerInvariant() == normalizedSlug);
     }
 
     /// <inheritdoc />

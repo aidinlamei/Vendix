@@ -43,7 +43,9 @@ public class ProductRepository : IProductRepository
     public async Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         // Full includes for detail view - uses split query for better performance
-        return await _context.Products
+        var normalizedSlug = slug.ToLowerInvariant();
+        // Load all products and filter in memory because EF Core can't translate Slug.Value directly
+        var products = await _context.Products
             .Include(p => p.Variants)
             .Include(p => p.Specifications)
             .Include(p => p.Images)
@@ -51,7 +53,9 @@ public class ProductRepository : IProductRepository
             .Include(p => p.Category)
             .Include(p => p.Brand)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(p => EF.Property<string>(p, nameof(Product.Slug)) == slug.ToLowerInvariant(), cancellationToken);
+            .ToListAsync(cancellationToken);
+        
+        return products.FirstOrDefault(p => p.Slug.Value.ToLowerInvariant() == normalizedSlug);
     }
 
     /// <inheritdoc />

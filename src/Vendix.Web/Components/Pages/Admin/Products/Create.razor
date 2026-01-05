@@ -5,6 +5,7 @@
 @using Vendix.Application.Catalog.Commands
 @using Vendix.Application.Catalog.DTOs
 @using Vendix.Application.Catalog.Queries
+@using Vendix.Application.Common.Exceptions
 @using Vendix.Domain.Catalog.Enums
 @using Vendix.Web.Components.Shared
 @inject IMediator Mediator
@@ -288,9 +289,20 @@
                 Navigation.NavigateTo("/admin/products");
             }
         }
+        catch (ValidationException ex)
+        {
+            var errorMessages = ex.Errors.SelectMany(e => e.Value).ToList();
+            var errorMessage = string.Join("; ", errorMessages);
+            ShowErrorToast("Validation failed", errorMessage);
+        }
         catch (Exception ex)
         {
-            ShowErrorToast("Failed to create product", ex.Message);
+            var errorMessage = ex.Message;
+            if (ex.InnerException != null)
+            {
+                errorMessage += $"\n{ex.InnerException.Message}";
+            }
+            ShowErrorToast("Failed to create product", errorMessage);
         }
         finally
         {

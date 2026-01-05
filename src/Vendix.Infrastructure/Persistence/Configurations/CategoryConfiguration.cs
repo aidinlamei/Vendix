@@ -59,10 +59,11 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.HasQueryFilter(c => !c.IsDeleted);
 
-        // Concurrency Token
+        // Concurrency Token - PostgreSQL uses bytea for row version
         builder.Property(c => c.RowVersion)
-            .IsRowVersion()
-            .IsConcurrencyToken();
+            .HasColumnType("bytea")
+            .IsConcurrencyToken()
+            .HasDefaultValueSql("'\\x0000000000000000'::bytea");
 
         // Translations Collection
         builder.HasMany(c => c.Translations)
