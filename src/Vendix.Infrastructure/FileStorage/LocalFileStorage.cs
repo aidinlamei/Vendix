@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Vendix.Application.Common.Interfaces;
@@ -11,13 +12,46 @@ public class LocalFileStorage : IFileStorage
 {
     private readonly FileStorageSettings _settings;
     private readonly ILogger<LocalFileStorage> _logger;
+    private readonly string _absoluteBasePath;
 
     public LocalFileStorage(
         IOptions<FileStorageSettings> settings,
-        ILogger<LocalFileStorage> logger)
+        ILogger<LocalFileStorage> logger,
+        IWebHostEnvironment environment)
     {
         _settings = settings.Value;
         _logger = logger;
+
+        // Resolve absolute path using WebRootPath (wwwroot)
+        // If BasePath starts with "wwwroot", use WebRootPath as base
+        var basePath = _settings.BasePath;
+        if (basePath.StartsWith("wwwroot", StringComparison.OrdinalIgnoreCase))
+        {
+            // Remove "wwwroot/" or "wwwroot\" prefix and combine with WebRootPath
+            var relativePart = basePath.Length > 7
+                ? basePath.Substring(basePath.IndexOf(Path.DirectorySeparatorChar) + 1)
+                    .TrimStart(Path.DirectorySeparatorChar, '/', '\\')
+                : "";
+
+            if (basePath.Contains('/') || basePath.Contains('\\'))
+            {
+                relativePart = basePath.Substring(8).TrimStart('/', '\\'); // Skip "wwwroot/"
+            }
+
+            _absoluteBasePath = string.IsNullOrEmpty(relativePart)
+                ? environment.WebRootPath
+                : Path.Combine(environment.WebRootPath, relativePart);
+        }
+        else if (Path.IsPathRooted(basePath))
+        {
+            _absoluteBasePath = basePath;
+        }
+        else
+        {
+            _absoluteBasePath = Path.Combine(environment.ContentRootPath, basePath);
+        }
+
+        _logger.LogInformation("LocalFileStorage initialized with base path: {BasePath}", _absoluteBasePath);
     }
 
     public async Task<string> UploadAsync(
@@ -48,23 +82,29 @@ public class LocalFileStorage : IFileStorage
         // Generate unique filename: {guid}_{sanitized_original_name}{extension}
         var sanitizedName = SanitizeFileName(Path.GetFileNameWithoutExtension(fileName));
         var uniqueFileName = $"{Guid.NewGuid():N}_{sanitizedName}{extension}";
-        
-        // Build full path
-        var folderPath = Path.Combine(_settings.BasePath, folder);
+
+        // Build full path using absolute base path
+        var folderPath = Path.Combine(_absoluteBasePath, folder);
         var fullPath = Path.Combine(folderPath, uniqueFileName);
+
+        _logger.LogDebug("Uploading file to: {FullPath}", fullPath);
 
         // Ensure directory exists
         Directory.CreateDirectory(folderPath);
 
-        // Save file
+        // Save file - copy stream to memory first to handle Blazor's SignalR stream
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
         await using var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
-        await file.CopyToAsync(fileStream, cancellationToken);
+        await memoryStream.CopyToAsync(fileStream, cancellationToken);
 
         // Return relative path (for storage in DB)
         var relativePath = Path.Combine(folder, uniqueFileName).Replace("\\", "/");
-        
-        _logger.LogInformation("File uploaded: {Path} ({Size} bytes)", relativePath, file.Length);
-        
+
+        _logger.LogInformation("File uploaded: {Path} ({Size} bytes) to {FullPath}", relativePath, file.Length, fullPath);
+
         return relativePath;
     }
 
@@ -73,8 +113,8 @@ public class LocalFileStorage : IFileStorage
         if (string.IsNullOrWhiteSpace(path))
             return Task.CompletedTask;
 
-        var fullPath = Path.Combine(_settings.BasePath, path);
-        
+        var fullPath = Path.Combine(_absoluteBasePath, path);
+
         if (File.Exists(fullPath))
         {
             File.Delete(fullPath);
@@ -82,7 +122,7 @@ public class LocalFileStorage : IFileStorage
         }
         else
         {
-            _logger.LogWarning("File not found for deletion: {Path}", path);
+            _logger.LogWarning("File not found for deletion: {Path} (looked at {FullPath})", path, fullPath);
         }
 
         return Task.CompletedTask;
@@ -102,8 +142,8 @@ public class LocalFileStorage : IFileStorage
     {
         if (string.IsNullOrWhiteSpace(path))
             return Task.FromResult(false);
-            
-        var fullPath = Path.Combine(_settings.BasePath, path);
+
+        var fullPath = Path.Combine(_absoluteBasePath, path);
         return Task.FromResult(File.Exists(fullPath));
     }
 
