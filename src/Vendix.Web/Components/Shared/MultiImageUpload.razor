@@ -107,13 +107,21 @@
 </div>
 
 @code {
-    [Parameter] public List<ImageItem> Images { get; set; } = new();
+    private List<ImageItem> _images = new();
+
+    [Parameter]
+    public List<ImageItem> Images
+    {
+        get => _images;
+        set => _images = value ?? new List<ImageItem>();
+    }
+
     [Parameter] public string Folder { get; set; } = "products";
     [Parameter] public int MaxImages { get; set; } = 10;
     [Parameter] public long MaxFileSizeBytes { get; set; } = 5 * 1024 * 1024;
     [Parameter] public string AcceptedTypes { get; set; } = ".jpg,.jpeg,.png,.webp,.gif";
     [Parameter] public string HelpText { get; set; } = "JPG, PNG, WebP or GIF (max 5MB each)";
-    
+
     [Parameter] public EventCallback<List<ImageItem>> ImagesChanged { get; set; }
     [Parameter] public EventCallback<string> OnError { get; set; }
 
@@ -131,11 +139,11 @@
     private async Task HandleFilesSelected(InputFileChangeEventArgs e)
     {
         _errorMessage = null;
-        var remainingSlots = MaxImages - Images.Count;
+        var remainingSlots = MaxImages - _images.Count;
         if (remainingSlots <= 0) return;
 
         var files = e.GetMultipleFiles(remainingSlots);
-        
+
         if (!files.Any()) return;
 
         IsUploading = true;
@@ -173,19 +181,23 @@
                 {
                     Url = publicUrl,
                     Alt = Path.GetFileNameWithoutExtension(file.Name),
-                    IsMain = !Images.Any() && !newImages.Any() // First image is main
+                    IsMain = !_images.Any() && !newImages.Any() // First image is main
                 });
+
+                Console.WriteLine($"[MultiImageUpload] Uploaded: {publicUrl}");
             }
             catch (Exception ex)
             {
                 errors.Add($"{file.Name}: {ex.Message}");
+                Console.WriteLine($"[MultiImageUpload] Upload error for {file.Name}: {ex}");
             }
         }
 
         if (newImages.Any())
         {
-            Images.AddRange(newImages);
-            await ImagesChanged.InvokeAsync(Images);
+            _images.AddRange(newImages);
+            Console.WriteLine($"[MultiImageUpload] Total images after upload: {_images.Count}");
+            await ImagesChanged.InvokeAsync(_images);
         }
 
         if (errors.Any())
@@ -201,18 +213,18 @@
 
     private async Task SetMainImage(int index)
     {
-        foreach (var img in Images)
+        foreach (var img in _images)
         {
             img.IsMain = false;
         }
-        Images[index].IsMain = true;
-        await ImagesChanged.InvokeAsync(Images);
+        _images[index].IsMain = true;
+        await ImagesChanged.InvokeAsync(_images);
     }
 
     private async Task RemoveImage(int index)
     {
-        var image = Images[index];
-        
+        var image = _images[index];
+
         // Try to delete from storage
         try
         {
@@ -222,15 +234,15 @@
         catch { /* Ignore */ }
 
         var wasMain = image.IsMain;
-        Images.RemoveAt(index);
+        _images.RemoveAt(index);
 
         // If removed image was main, set first as main
-        if (wasMain && Images.Any())
+        if (wasMain && _images.Any())
         {
-            Images[0].IsMain = true;
+            _images[0].IsMain = true;
         }
 
-        await ImagesChanged.InvokeAsync(Images);
+        await ImagesChanged.InvokeAsync(_images);
     }
 
     public class ImageItem
