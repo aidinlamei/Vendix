@@ -280,7 +280,14 @@
                 CategoryId: _model.CategoryId,
                 BrandId: _model.BrandId,
                 IsActive: _model.IsActive,
-                Translations: BuildTranslations()
+                Translations: BuildTranslations(),
+                Images: _productImages.Select(img => new ProductImageInput
+                {
+                    Url = img.Url,
+                    AltText = img.Alt,
+                    SortOrder = _productImages.IndexOf(img),
+                    IsMain = img.IsMain
+                }).ToList()
             );
 
             var result = await Mediator.Send(command);

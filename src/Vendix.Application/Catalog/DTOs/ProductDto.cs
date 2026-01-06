@@ -190,8 +190,14 @@ public sealed record ProductListDto
 
     /// <summary>
     /// Gets the total stock quantity (sum of all variant stocks).
+    /// Returns -1 if the product has no variants (unlimited stock).
     /// </summary>
     public int TotalStock { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the product has variants.
+    /// </summary>
+    public bool HasVariants { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether the product is active (not deleted).

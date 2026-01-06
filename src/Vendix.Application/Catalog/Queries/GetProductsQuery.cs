@@ -47,7 +47,37 @@ public sealed class GetProductsQueryHandler(
             request.PageSize,
             cancellationToken);
 
-        var dtos = products.Select(p => mapper.Map<ProductListDto>(p)).ToList();
+        var dtos = products.Select(p =>
+        {
+            try
+            {
+                return mapper.Map<ProductListDto>(p);
+            }
+            catch (Exception ex)
+            {
+                // Log mapping error but continue with other products
+                // In production, use proper logging
+                Console.WriteLine($"Error mapping product {p.Id}: {ex.Message}");
+                // Return a basic DTO with null MainImageUrl
+                return new ProductListDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Sku = p.Sku.Value,
+                    Slug = p.Slug.Value,
+                    Price = p.Price.Amount,
+                    Currency = p.Price.Currency,
+                    MainImageUrl = null,
+                    CategoryName = p.Category?.Name,
+                    CategorySlug = p.Category?.Slug.Value,
+                    BrandName = p.Brand?.Name,
+                    BrandSlug = p.Brand?.Slug.Value,
+                    HasVariants = p.Variants.Any(),
+                    TotalStock = p.Variants.Any() ? p.Variants.Sum(v => v.StockQuantity) : -1,
+                    IsActive = !p.IsDeleted
+                };
+            }
+        }).ToList();
 
         return new PaginatedList<ProductListDto>(
             dtos,

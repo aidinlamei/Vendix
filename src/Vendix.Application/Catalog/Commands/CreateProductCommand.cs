@@ -32,6 +32,37 @@ public sealed class ProductTranslationInput
 }
 
 /// <summary>
+/// Input model for product image.
+/// </summary>
+public sealed class ProductImageInput
+{
+    /// <summary>
+    /// Gets or sets the image ID (for existing images) or null for new images.
+    /// </summary>
+    public Guid? Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the image URL.
+    /// </summary>
+    public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the alternative text for accessibility.
+    /// </summary>
+    public string? AltText { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sort order for display sequence.
+    /// </summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this is the main product image.
+    /// </summary>
+    public bool IsMain { get; set; }
+}
+
+/// <summary>
 /// Command to create a new product.
 /// </summary>
 /// <param name="Name">The product name.</param>
@@ -45,6 +76,7 @@ public sealed class ProductTranslationInput
 /// <param name="BrandId">Optional brand ID.</param>
 /// <param name="IsActive">Whether the product is active (visible to customers).</param>
 /// <param name="Translations">Optional list of translations.</param>
+/// <param name="Images">Optional list of product images.</param>
 public sealed record CreateProductCommand(
     string Name,
     string Sku,
@@ -56,7 +88,8 @@ public sealed record CreateProductCommand(
     Guid? CategoryId = null,
     Guid? BrandId = null,
     bool IsActive = true,
-    IReadOnlyList<ProductTranslationInput>? Translations = null) : IRequest<Result<Guid>>;
+    IReadOnlyList<ProductTranslationInput>? Translations = null,
+    IReadOnlyList<ProductImageInput>? Images = null) : IRequest<Result<Guid>>;
 
 /// <summary>
 /// Handler for <see cref="CreateProductCommand"/>.
@@ -103,6 +136,19 @@ public sealed class CreateProductCommandHandler(
                     translation.LanguageCode,
                     translation.Title,
                     translation.Description);
+            }
+        }
+
+        // Add images if provided
+        if (request.Images is not null && request.Images.Any())
+        {
+            foreach (var image in request.Images)
+            {
+                product.AddImage(
+                    image.Url,
+                    image.AltText,
+                    image.SortOrder,
+                    image.IsMain);
             }
         }
 

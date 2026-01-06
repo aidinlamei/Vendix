@@ -317,9 +317,10 @@ else
         _model.TitleFa = faTranslation?.Title;
         _model.DescriptionFa = faTranslation?.Description;
 
-        // Map existing images
+        // Map existing images with their IDs
         _productImages = _product.Images?.Select(i => new MultiImageUpload.ImageItem
         {
+            Id = i.Id,
             Url = i.Url,
             Alt = i.AltText ?? "",
             IsMain = i.IsMain
@@ -342,7 +343,15 @@ else
                 CategoryId: _model.CategoryId,
                 BrandId: _model.BrandId,
                 IsActive: _model.IsActive,
-                Translations: BuildTranslations()
+                Translations: BuildTranslations(),
+                Images: _productImages.Select(img => new ProductImageInput
+                {
+                    Id = img.Id,
+                    Url = img.Url,
+                    AltText = img.Alt,
+                    SortOrder = _productImages.IndexOf(img),
+                    IsMain = img.IsMain
+                }).ToList()
             );
 
             var result = await Mediator.Send(command);

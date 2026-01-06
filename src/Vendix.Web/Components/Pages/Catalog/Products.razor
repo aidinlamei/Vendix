@@ -52,7 +52,7 @@
                 <!-- Header with count and sort -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                     <p class="text-gray-600 mb-4 sm:mb-0">
-                        @if (_products is not null && _products.Items is not null)
+                        @if (_products?.Items is not null)
                         {
                             <span>Showing @_products.Items.Count of @_products.TotalCount products</span>
                         }
@@ -71,16 +71,16 @@
                     </div>
                 </div>
 
-                <!-- Loading State -->
                 @if (_isLoading)
                 {
+                    <!-- Loading State -->
                     <div class="flex justify-center py-12">
                         <LoadingSpinner Size="large" />
                     </div>
                 }
-                <!-- Empty State -->
-                else if (_products is null || _products.Items.Count == 0)
+                else if (_products?.Items is null || _products.Items.Count == 0)
                 {
+                    <!-- Empty State -->
                     <div class="text-center py-12 bg-white rounded-lg">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -92,9 +92,9 @@
                         </button>
                     </div>
                 }
-                <!-- Products Grid -->
-                else if (_products is not null && _products.Items is not null)
+                else
                 {
+                    <!-- Products Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach (var product in _products!.Items!)
                         {
@@ -106,8 +106,8 @@
                     @if (_products!.TotalPages > 1)
                     {
                         <div class="mt-8">
-                            <Pagination CurrentPage="_products.PageNumber"
-                                        TotalItems="_products.TotalCount"
+                            <Pagination CurrentPage="_products!.PageNumber"
+                                        TotalItems="_products!.TotalCount"
                                         PageSize="_pageSize"
                                         OnPageChange="HandlePageChanged" />
                         </div>
@@ -125,7 +125,7 @@
     [SupplyParameterFromQuery] public string? Search { get; set; }
     [SupplyParameterFromQuery] public int? Page { get; set; }
 
-    private PaginatedList<ProductListDto>? _products;
+    private PaginatedList<ProductListDto> _products = PaginatedList<ProductListDto>.Empty();
     private List<CategoryListDto> _categories = new();
     private List<BrandListDto> _brands = new();
     private CategoryDto? _currentCategory;
@@ -139,7 +139,16 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadFiltersData();
+        try
+        {
+            await LoadFiltersData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading filter data: {ex.Message}");
+            _categories = new List<CategoryListDto>();
+            _brands = new List<BrandListDto>();
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -186,9 +195,18 @@
 
     private async Task LoadFiltersData()
     {
-        // Execute sequentially to avoid DbContext concurrency issues
-        _categories = await Mediator.Send(new GetCategoriesQuery());
-        _brands = await Mediator.Send(new GetBrandsQuery());
+        try
+        {
+            // Execute sequentially to avoid DbContext concurrency issues
+            _categories = await Mediator.Send(new GetCategoriesQuery()) ?? new List<CategoryListDto>();
+            _brands = await Mediator.Send(new GetBrandsQuery()) ?? new List<BrandListDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading filter data: {ex.Message}");
+            _categories = new List<CategoryListDto>();
+            _brands = new List<BrandListDto>();
+        }
     }
 
     private async Task LoadProducts()

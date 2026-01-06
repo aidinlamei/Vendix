@@ -1,11 +1,13 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Vendix.Application.Common.Exceptions;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Application.Common.Models;
 using Vendix.Domain.Catalog.Enums;
 using Vendix.Domain.Catalog.Repositories;
 using Vendix.Domain.Catalog.ValueObjects;
+using Vendix.Application.Catalog.Commands;
 
 namespace Vendix.Application.Catalog.Commands;
 
@@ -23,6 +25,7 @@ namespace Vendix.Application.Catalog.Commands;
 /// <param name="BrandId">Optional brand ID.</param>
 /// <param name="IsActive">Whether the product is active (visible to customers).</param>
 /// <param name="Translations">Optional list of translations.</param>
+/// <param name="Images">Optional list of product images.</param>
 public sealed record UpdateProductCommand(
     Guid Id,
     string Name,
@@ -34,7 +37,8 @@ public sealed record UpdateProductCommand(
     Guid? CategoryId = null,
     Guid? BrandId = null,
     bool IsActive = true,
-    IReadOnlyList<ProductTranslationInput>? Translations = null) : IRequest<Result>;
+    IReadOnlyList<ProductTranslationInput>? Translations = null,
+    IReadOnlyList<ProductImageInput>? Images = null) : IRequest<Result>;
 
 /// <summary>
 /// Handler for <see cref="UpdateProductCommand"/>.
@@ -52,6 +56,9 @@ public sealed class UpdateProductCommandHandler(
         {
             throw NotFoundException.ForEntity<Domain.Catalog.Entities.Product>(request.Id);
         }
+        
+        // Debug: Log initial RowVersion
+        System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Initial Product RowVersion: {(product.RowVersion != null ? Convert.ToHexString(product.RowVersion) : "null")}");
 
         // Check for duplicate slug (excluding current product)
         var existingBySlug = await productRepository.GetBySlugAsync(
@@ -83,6 +90,61 @@ public sealed class UpdateProductCommandHandler(
             }
         }
 
+        // Update images
+        if (request.Images is not null)
+        {
+            // Get existing image IDs from request
+            var existingImageIds = request.Images
+                .Where(img => img.Id.HasValue)
+                .Select(img => img.Id!.Value)
+                .ToHashSet();
+
+            // Remove images that are not in the request
+            var imagesToRemove = product.Images
+                .Where(img => !existingImageIds.Contains(img.Id))
+                .Select(img => img.Id)
+                .ToList();
+            
+            foreach (var imageId in imagesToRemove)
+            {
+                product.RemoveImage(imageId);
+            }
+
+            // Update existing images or add new ones
+            foreach (var imageInput in request.Images)
+            {
+                if (imageInput.Id.HasValue)
+                {
+                    // Update existing image
+                    var existingImage = product.Images.FirstOrDefault(i => i.Id == imageInput.Id.Value);
+                    if (existingImage != null)
+                    {
+                        existingImage.UpdateUrl(imageInput.Url);
+                        existingImage.UpdateAltText(imageInput.AltText);
+                        existingImage.UpdateSortOrder(imageInput.SortOrder);
+                        
+                        if (imageInput.IsMain && !existingImage.IsMain)
+                        {
+                            existingImage.SetAsMain();
+                        }
+                        else if (!imageInput.IsMain && existingImage.IsMain)
+                        {
+                            existingImage.UnsetAsMain();
+                        }
+                    }
+                }
+                else
+                {
+                    // Add new image
+                    product.AddImage(
+                        imageInput.Url,
+                        imageInput.AltText,
+                        imageInput.SortOrder,
+                        imageInput.IsMain);
+                }
+            }
+        }
+
         // Update active status
         if (request.IsActive && product.IsDeleted)
         {
@@ -97,7 +159,143 @@ public sealed class UpdateProductCommandHandler(
         }
 
         productRepository.Update(product);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        
+        // Debug: Log RowVersion before save
+        System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Before SaveChanges - Product RowVersion: {(product.RowVersion != null ? Convert.ToHexString(product.RowVersion) : "null")}");
+        
+        // Debug: Log that we're about to save
+        System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] About to save changes for product {product.Id}");
+        
+        try
+        {
+            var rowsAffected = await unitOfWork.SaveChangesAsync(cancellationToken);
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] SaveChanges succeeded, rows affected: {rowsAffected}");
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Concurrency exception caught: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Failed entries count: {ex.Entries.Count}");
+            foreach (var entry in ex.Entries)
+            {
+                System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Failed entry: {entry.Entity.GetType().Name}, Id: {entry.Entity.GetType().GetProperty("Id")?.GetValue(entry.Entity)}");
+                if (entry.Entity is Domain.Catalog.Entities.Product failedProduct)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Failed Product RowVersion: {(failedProduct.RowVersion != null ? Convert.ToHexString(failedProduct.RowVersion) : "null")}");
+                    var rowVersionProp = entry.Property("RowVersion");
+                    var failedOriginal = rowVersionProp.OriginalValue as byte[];
+                    var failedCurrent = rowVersionProp.CurrentValue as byte[];
+                    System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Failed Product Original RowVersion: {(failedOriginal != null ? Convert.ToHexString(failedOriginal) : "null")}");
+                    System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Failed Product Current RowVersion: {(failedCurrent != null ? Convert.ToHexString(failedCurrent) : "null")}");
+                }
+            }
+            
+            // Reload product with fresh RowVersion from database
+            // Use GetByIdAsync which will load with current RowVersion
+            var reloadedProduct = await productRepository.GetByIdAsync(request.Id, cancellationToken);
+            if (reloadedProduct is null)
+            {
+                throw NotFoundException.ForEntity<Domain.Catalog.Entities.Product>(request.Id);
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Reloaded Product RowVersion: {(reloadedProduct.RowVersion != null ? Convert.ToHexString(reloadedProduct.RowVersion) : "null")}");
+            
+            // The reloaded product has the current RowVersion from database
+            // This will be used as OriginalValues when we call Update
+
+            // Reapply changes to reloaded product
+            reloadedProduct.UpdateName(request.Name);
+            reloadedProduct.UpdateSlug(new Slug(request.Slug));
+            reloadedProduct.UpdatePrice(new Money(request.Price, request.Currency));
+            reloadedProduct.UpdateProductType(request.ProductType);
+            reloadedProduct.UpdateDescription(request.Description);
+            reloadedProduct.AssignToCategory(request.CategoryId);
+            reloadedProduct.AssignToBrand(request.BrandId);
+
+            // Update translations
+            if (request.Translations is not null)
+            {
+                foreach (var translation in request.Translations)
+                {
+                    reloadedProduct.RemoveTranslation(translation.LanguageCode);
+                    reloadedProduct.AddTranslation(
+                        translation.LanguageCode,
+                        translation.Title,
+                        translation.Description);
+                }
+            }
+
+            // Update images
+            if (request.Images is not null)
+            {
+                var existingImageIds = request.Images
+                    .Where(img => img.Id.HasValue)
+                    .Select(img => img.Id!.Value)
+                    .ToHashSet();
+
+                var imagesToRemove = reloadedProduct.Images
+                    .Where(img => !existingImageIds.Contains(img.Id))
+                    .Select(img => img.Id)
+                    .ToList();
+                
+                foreach (var imageId in imagesToRemove)
+                {
+                    reloadedProduct.RemoveImage(imageId);
+                }
+
+                foreach (var imageInput in request.Images)
+                {
+                    if (imageInput.Id.HasValue)
+                    {
+                        var existingImage = reloadedProduct.Images.FirstOrDefault(i => i.Id == imageInput.Id.Value);
+                        if (existingImage != null)
+                        {
+                            existingImage.UpdateUrl(imageInput.Url);
+                            existingImage.UpdateAltText(imageInput.AltText);
+                            existingImage.UpdateSortOrder(imageInput.SortOrder);
+                            
+                            if (imageInput.IsMain && !existingImage.IsMain)
+                            {
+                                existingImage.SetAsMain();
+                            }
+                            else if (!imageInput.IsMain && existingImage.IsMain)
+                            {
+                                existingImage.UnsetAsMain();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        reloadedProduct.AddImage(
+                            imageInput.Url,
+                            imageInput.AltText,
+                            imageInput.SortOrder,
+                            imageInput.IsMain);
+                    }
+                }
+            }
+
+            // Update active status
+            if (request.IsActive && reloadedProduct.IsDeleted)
+            {
+                reloadedProduct.IsDeleted = false;
+                reloadedProduct.DeletedAt = null;
+                reloadedProduct.DeletedBy = null;
+            }
+            else if (!request.IsActive && !reloadedProduct.IsDeleted)
+            {
+                reloadedProduct.MarkAsDeleted();
+            }
+
+            // Update the reloaded product - this will detach any previously tracked entity
+            productRepository.Update(reloadedProduct);
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Before retry SaveChanges - Reloaded Product RowVersion: {(reloadedProduct.RowVersion != null ? Convert.ToHexString(reloadedProduct.RowVersion) : "null")}");
+            
+            // Retry save with fresh entity and updated RowVersion (will be set by interceptor)
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            System.Diagnostics.Debug.WriteLine($"[UpdateProductCommand] Retry SaveChanges succeeded");
+        }
 
         // Invalidate cache
         await cacheService.RemoveByPrefixAsync("products", cancellationToken);
