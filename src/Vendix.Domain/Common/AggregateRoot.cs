@@ -22,14 +22,15 @@ public abstract class AggregateRoot : BaseEntity
     /// </remarks>
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    /// <summary>
-    /// Gets or sets the row version for optimistic concurrency control.
-    /// </summary>
-    /// <remarks>
-    /// This property is used by EF Core to detect concurrent modifications.
-    /// The value is automatically updated by the database on each update.
-    /// </remarks>
-    public byte[] RowVersion { get; set; } = null!;
+    // RowVersion removed - concurrency control disabled for PostgreSQL compatibility
+    // /// <summary>
+    // /// Gets or sets the row version for optimistic concurrency control.
+    // /// </summary>
+    // /// <remarks>
+    // /// This property is used by EF Core to detect concurrent modifications.
+    // /// The value is automatically updated by the database on each update.
+    // /// </remarks>
+    // public byte[] RowVersion { get; set; } = null!;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AggregateRoot"/> class.

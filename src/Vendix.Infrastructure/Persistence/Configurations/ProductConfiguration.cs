@@ -98,12 +98,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasQueryFilter(p => !p.IsDeleted);
 
-        // Concurrency Token - PostgreSQL uses bytea for row version
-        // Note: RowVersion will be manually updated in SaveChanges interceptor
-        builder.Property(p => p.RowVersion)
-            .HasColumnType("bytea")
-            .IsConcurrencyToken()
-            .HasDefaultValueSql("'\\x0000000000000000'::bytea");
+        // RowVersion removed - concurrency control disabled for PostgreSQL compatibility
+        // builder.Property(p => p.RowVersion)
+        //     .HasColumnType("bytea")
+        //     .HasDefaultValueSql("'\\x0000000000000000'::bytea");
 
         // Variants Collection
         builder.HasMany(p => p.Variants)

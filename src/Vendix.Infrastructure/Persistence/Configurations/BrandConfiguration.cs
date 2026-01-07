@@ -60,10 +60,9 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
 
         builder.HasQueryFilter(b => !b.IsDeleted);
 
-        // Concurrency Token - PostgreSQL uses bytea for row version
-        builder.Property(b => b.RowVersion)
-            .HasColumnType("bytea")
-            .IsConcurrencyToken()
-            .HasDefaultValueSql("'\\x0000000000000000'::bytea");
+        // RowVersion removed - concurrency control disabled for PostgreSQL compatibility
+        // builder.Property(b => b.RowVersion)
+        //     .HasColumnType("bytea")
+        //     .HasDefaultValueSql("'\\x0000000000000000'::bytea");
     }
 }

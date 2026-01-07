@@ -218,16 +218,17 @@ public class BrandTests
         brand.Should().BeAssignableTo<AggregateRoot>();
     }
 
-    [Fact]
-    public void Brand_HasRowVersionProperty()
-    {
-        // Arrange
-        var brand = CreateValidBrand();
-
-        // Assert
-        // RowVersion is null for new entities and will be set by EF Core after save
-        brand.RowVersion.Should().BeNull();
-    }
+    // RowVersion removed - concurrency control disabled
+    // [Fact]
+    // public void Brand_HasRowVersionProperty()
+    // {
+    //     // Arrange
+    //     var brand = CreateValidBrand();
+    //
+    //     // Assert
+    //     // RowVersion is null for new entities and will be set by EF Core after save
+    //     brand.RowVersion.Should().BeNull();
+    // }
 
     [Fact]
     public void Brand_DefaultIsDeletedIsFalse()

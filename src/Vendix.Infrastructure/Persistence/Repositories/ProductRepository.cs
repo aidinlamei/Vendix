@@ -174,83 +174,16 @@ public class ProductRepository : IProductRepository
     {
         ArgumentNullException.ThrowIfNull(entity);
         
-        // Debug logging
-        System.Diagnostics.Debug.WriteLine($"[Update Debug] Product Id: {entity.Id}, RowVersion: {(entity.RowVersion != null ? Convert.ToHexString(entity.RowVersion) : "null")}");
-        
-        // Check if entity is already tracked
-        var trackedEntity = _context.Products.Local.FirstOrDefault(e => e.Id == entity.Id);
-        if (trackedEntity != null)
+        // Clear any tracked entities to avoid stale RowVersion
+        var trackedProduct = _context.ChangeTracker.Entries<Product>()
+            .FirstOrDefault(e => e.Entity.Id == entity.Id);
+        if (trackedProduct != null)
         {
-            System.Diagnostics.Debug.WriteLine($"[Update Debug] Found tracked entity, same reference: {ReferenceEquals(trackedEntity, entity)}");
-            
-            if (ReferenceEquals(trackedEntity, entity))
-            {
-                // Entity is already tracked and is the same instance
-                // IMPORTANT: We need to reload OriginalValues from database to ensure RowVersion is correct
-                var entry = _context.Entry(entity);
-                
-                // Reload OriginalValues from database using GetDatabaseValues
-                // This is the safest way to reload OriginalValues without detaching
-                try
-                {
-                    var databaseValues = entry.GetDatabaseValues();
-                    if (databaseValues != null)
-                    {
-                        // Get RowVersion from database
-                        var dbRowVersion = databaseValues.GetValue<byte[]>("RowVersion");
-                        if (dbRowVersion != null)
-                        {
-                            // Set OriginalValue to the database value
-                            entry.Property("RowVersion").OriginalValue = dbRowVersion;
-                            System.Diagnostics.Debug.WriteLine($"[Update Debug] Reloaded Original RowVersion from DB: {Convert.ToHexString(dbRowVersion)}");
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // If GetDatabaseValues fails (e.g., entity doesn't exist in DB), log and continue
-                    System.Diagnostics.Debug.WriteLine($"[Update Debug] Failed to reload OriginalValues: {ex.Message}");
-                }
-                
-                // Ensure entity is marked as modified
-                entry.State = EntityState.Modified;
-                
-                var originalValue = entry.Property("RowVersion").OriginalValue as byte[];
-                System.Diagnostics.Debug.WriteLine($"[Update Debug] After reload OriginalValues, Original RowVersion: {(originalValue != null ? Convert.ToHexString(originalValue) : "null")}, Current RowVersion: {(entity.RowVersion != null ? Convert.ToHexString(entity.RowVersion) : "null")}");
-                
-                // Ensure all child entities are tracked
-                if (entity.Images != null)
-                {
-                    foreach (var image in entity.Images)
-                    {
-                        var imageEntry = _context.Entry(image);
-                        if (imageEntry.State == EntityState.Detached)
-                        {
-                            _context.ProductImages.Attach(image);
-                            imageEntry.State = EntityState.Modified;
-                        }
-                        System.Diagnostics.Debug.WriteLine($"[Update Debug] Image {image.Id} state: {imageEntry.State}");
-                    }
-                }
-                
-                return;
-            }
-            else
-            {
-                // Detach the old tracked entity to avoid conflicts
-                System.Diagnostics.Debug.WriteLine($"[Update Debug] Detaching old tracked entity");
-                _context.Entry(trackedEntity).State = EntityState.Detached;
-            }
+            trackedProduct.State = EntityState.Detached;
         }
         
-        // Attach and mark as modified - this will use entity's RowVersion as OriginalValues
-        _context.Products.Attach(entity);
-        var newEntry = _context.Entry(entity);
-        newEntry.State = EntityState.Modified;
-        
-        var attachedOriginal = newEntry.Property("RowVersion").OriginalValue as byte[];
-        var attachedCurrent = entity.RowVersion;
-        System.Diagnostics.Debug.WriteLine($"[Update Debug] After Attach, Original RowVersion: {(attachedOriginal != null ? Convert.ToHexString(attachedOriginal) : "null")}, Current RowVersion: {(attachedCurrent != null ? Convert.ToHexString(attachedCurrent) : "null")}");
+        // Now update
+        _context.Products.Update(entity);
     }
 
     /// <inheritdoc />

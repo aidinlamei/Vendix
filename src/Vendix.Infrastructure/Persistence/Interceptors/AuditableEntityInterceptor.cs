@@ -91,39 +91,40 @@ public sealed class AuditableEntityInterceptor : SaveChangesInterceptor
             }
         }
 
+        // RowVersion update logic disabled - concurrency token removed for PostgreSQL compatibility
         // Update RowVersion for AggregateRoot entities (PostgreSQL doesn't auto-update bytea)
-        foreach (var entry in context.ChangeTracker.Entries<AggregateRoot>())
-        {
-            if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
-            {
-                var originalRowVersion = entry.Property(nameof(AggregateRoot.RowVersion)).OriginalValue as byte[];
-                var currentRowVersion = entry.Entity.RowVersion;
-                
-                // Generate a new RowVersion using current timestamp and random bytes
-                var timestamp = BitConverter.GetBytes(utcNow.Ticks);
-                var random = Guid.NewGuid().ToByteArray();
-                var newRowVersion = new byte[timestamp.Length + random.Length];
-                Buffer.BlockCopy(timestamp, 0, newRowVersion, 0, timestamp.Length);
-                Buffer.BlockCopy(random, 0, newRowVersion, timestamp.Length, random.Length);
-                
-                // Log for debugging
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Entity: {entry.Entity.GetType().Name}, Id: {entry.Entity.Id}");
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] State: {entry.State}");
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Original RowVersion: {(originalRowVersion != null ? Convert.ToHexString(originalRowVersion) : "null")}");
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Current RowVersion: {(currentRowVersion != null ? Convert.ToHexString(currentRowVersion) : "null")}");
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] New RowVersion: {Convert.ToHexString(newRowVersion)}");
-                
-                // Only update the entity property, NOT OriginalValues
-                // EF Core will use OriginalValues in WHERE clause and new value in SET clause
-                entry.Entity.RowVersion = newRowVersion;
-                
-                // Mark RowVersion as modified so EF Core includes it in UPDATE SET
-                entry.Property(nameof(AggregateRoot.RowVersion)).IsModified = true;
-                
-                var finalOriginal = entry.Property(nameof(AggregateRoot.RowVersion)).OriginalValue as byte[];
-                var finalCurrent = entry.Entity.RowVersion;
-                System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] After update - Original: {(finalOriginal != null ? Convert.ToHexString(finalOriginal) : "null")}, Current: {(finalCurrent != null ? Convert.ToHexString(finalCurrent) : "null")}");
-            }
-        }
+        // foreach (var entry in context.ChangeTracker.Entries<AggregateRoot>())
+        // {
+        //     if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+        //     {
+        //         var originalRowVersion = entry.Property(nameof(AggregateRoot.RowVersion)).OriginalValue as byte[];
+        //         var currentRowVersion = entry.Entity.RowVersion;
+        //         
+        //         // Generate a new RowVersion using current timestamp and random bytes
+        //         var timestamp = BitConverter.GetBytes(utcNow.Ticks);
+        //         var random = Guid.NewGuid().ToByteArray();
+        //         var newRowVersion = new byte[timestamp.Length + random.Length];
+        //         Buffer.BlockCopy(timestamp, 0, newRowVersion, 0, timestamp.Length);
+        //         Buffer.BlockCopy(random, 0, newRowVersion, timestamp.Length, random.Length);
+        //         
+        //         // Log for debugging
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Entity: {entry.Entity.GetType().Name}, Id: {entry.Entity.Id}");
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] State: {entry.State}");
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Original RowVersion: {(originalRowVersion != null ? Convert.ToHexString(originalRowVersion) : "null")}");
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] Current RowVersion: {(currentRowVersion != null ? Convert.ToHexString(currentRowVersion) : "null")}");
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] New RowVersion: {Convert.ToHexString(newRowVersion)}");
+        //         
+        //         // Only update the entity property, NOT OriginalValues
+        //         // EF Core will use OriginalValues in WHERE clause and new value in SET clause
+        //         entry.Entity.RowVersion = newRowVersion;
+        //         
+        //         // Mark RowVersion as modified so EF Core includes it in UPDATE SET
+        //         entry.Property(nameof(AggregateRoot.RowVersion)).IsModified = true;
+        //         
+        //         var finalOriginal = entry.Property(nameof(AggregateRoot.RowVersion)).OriginalValue as byte[];
+        //         var finalCurrent = entry.Entity.RowVersion;
+        //         System.Diagnostics.Debug.WriteLine($"[RowVersion Debug] After update - Original: {(finalOriginal != null ? Convert.ToHexString(finalOriginal) : "null")}, Current: {(finalCurrent != null ? Convert.ToHexString(finalCurrent) : "null")}");
+        //     }
+        // }
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Vendix.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Vendix.Infrastructure.Persistence;
 namespace Vendix.Infrastructure.Migrations
 {
     [DbContext(typeof(VendixDbContext))]
-    partial class VendixDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260107062520_FixNullRowVersions")]
+    partial class FixNullRowVersions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -62,6 +65,13 @@ namespace Vendix.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bytea")
+                        .HasDefaultValueSql("'\\x0000000000000000'::bytea");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -118,6 +128,13 @@ namespace Vendix.Infrastructure.Migrations
 
                     b.Property<Guid?>("ParentCategoryId")
                         .HasColumnType("uuid");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bytea")
+                        .HasDefaultValueSql("'\\x0000000000000000'::bytea");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -214,6 +231,13 @@ namespace Vendix.Infrastructure.Migrations
 
                     b.Property<int>("ProductType")
                         .HasColumnType("integer");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bytea")
+                        .HasDefaultValueSql("'\\x0000000000000000'::bytea");
 
                     b.Property<string>("Sku")
                         .IsRequired()
