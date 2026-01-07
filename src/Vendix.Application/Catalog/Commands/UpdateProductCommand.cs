@@ -1,30 +1,15 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Vendix.Application.Common.Exceptions;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Application.Common.Models;
 using Vendix.Domain.Catalog.Enums;
 using Vendix.Domain.Catalog.Repositories;
 using Vendix.Domain.Catalog.ValueObjects;
-using Vendix.Application.Catalog.Commands;
 
 namespace Vendix.Application.Catalog.Commands;
 
-/// <summary>
-/// Command to update an existing product.
-/// </summary>
-/// <param name="Id">The product ID.</param>
-/// <param name="Name">The product name.</param>
-/// <param name="Slug">The URL-friendly slug.</param>
-/// <param name="Price">The product price.</param>
-/// <param name="Currency">The price currency.</param>
-/// <param name="ProductType">The product type.</param>
-/// <param name="Description">Optional product description.</param>
-/// <param name="CategoryId">Optional category ID.</param>
-/// <param name="BrandId">Optional brand ID.</param>
-/// <param name="IsActive">Whether the product is active (visible to customers).</param>
-/// <param name="Translations">Optional list of translations.</param>
-/// <param name="Images">Optional list of product images.</param>
 public sealed record UpdateProductCommand(
     Guid Id,
     string Name,
@@ -39,15 +24,11 @@ public sealed record UpdateProductCommand(
     IReadOnlyList<ProductTranslationInput>? Translations = null,
     IReadOnlyList<ProductImageInput>? Images = null) : IRequest<Result>;
 
-/// <summary>
-/// Handler for <see cref="UpdateProductCommand"/>.
-/// </summary>
 public sealed class UpdateProductCommandHandler(
     IProductRepository productRepository,
     IUnitOfWork unitOfWork,
     ICacheService cacheService) : IRequestHandler<UpdateProductCommand, Result>
 {
-    /// <inheritdoc />
     public async Task<Result> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
         var product = await productRepository.GetByIdAsync(request.Id, cancellationToken);
@@ -56,7 +37,6 @@ public sealed class UpdateProductCommandHandler(
             throw NotFoundException.ForEntity<Domain.Catalog.Entities.Product>(request.Id);
         }
 
-        // Check for duplicate slug (excluding current product)
         var existingBySlug = await productRepository.GetBySlugAsync(
             new Slug(request.Slug), cancellationToken);
         if (existingBySlug is not null && existingBySlug.Id != request.Id)
@@ -72,10 +52,8 @@ public sealed class UpdateProductCommandHandler(
         product.AssignToCategory(request.CategoryId);
         product.AssignToBrand(request.BrandId);
 
-        // Update translations
         if (request.Translations is not null)
         {
-            // Remove existing translations for languages being updated
             foreach (var translation in request.Translations)
             {
                 product.RemoveTranslation(translation.LanguageCode);
@@ -86,16 +64,13 @@ public sealed class UpdateProductCommandHandler(
             }
         }
 
-        // Update images
         if (request.Images is not null)
         {
-            // Get existing image IDs from request
             var existingImageIds = request.Images
                 .Where(img => img.Id.HasValue)
                 .Select(img => img.Id!.Value)
                 .ToHashSet();
 
-            // Remove images that are not in the request
             var imagesToRemove = product.Images
                 .Where(img => !existingImageIds.Contains(img.Id))
                 .Select(img => img.Id)
@@ -106,12 +81,10 @@ public sealed class UpdateProductCommandHandler(
                 product.RemoveImage(imageId);
             }
 
-            // Update existing images or add new ones
             foreach (var imageInput in request.Images)
             {
                 if (imageInput.Id.HasValue)
                 {
-                    // Update existing image
                     var existingImage = product.Images.FirstOrDefault(i => i.Id == imageInput.Id.Value);
                     if (existingImage != null)
                     {
@@ -131,7 +104,6 @@ public sealed class UpdateProductCommandHandler(
                 }
                 else
                 {
-                    // Add new image
                     product.AddImage(
                         imageInput.Url,
                         imageInput.AltText,
@@ -141,10 +113,8 @@ public sealed class UpdateProductCommandHandler(
             }
         }
 
-        // Update active status
         if (request.IsActive && product.IsDeleted)
         {
-            // Restore if was deleted
             product.IsDeleted = false;
             product.DeletedAt = null;
             product.DeletedBy = null;
@@ -156,22 +126,14 @@ public sealed class UpdateProductCommandHandler(
 
         productRepository.Update(product);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Invalidate cache
         await cacheService.RemoveByPrefixAsync("products", cancellationToken);
 
         return Result.Success();
     }
 }
 
-/// <summary>
-/// Validator for <see cref="UpdateProductCommand"/>.
-/// </summary>
 public sealed class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UpdateProductCommandValidator"/> class.
-    /// </summary>
     public UpdateProductCommandValidator()
     {
         RuleFor(x => x.Id)

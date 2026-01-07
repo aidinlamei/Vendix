@@ -174,16 +174,18 @@ public class ProductRepository : IProductRepository
     {
         ArgumentNullException.ThrowIfNull(entity);
         
-        // Clear any tracked entities to avoid stale RowVersion
-        var trackedProduct = _context.ChangeTracker.Entries<Product>()
-            .FirstOrDefault(e => e.Entity.Id == entity.Id);
-        if (trackedProduct != null)
+        // CRITICAL FIX: Detach any tracked entity with same ID
+        var local = _context.Set<Product>()
+            .Local
+            .FirstOrDefault(e => e.Id == entity.Id);
+            
+        if (local != null)
         {
-            trackedProduct.State = EntityState.Detached;
+            _context.Entry(local).State = EntityState.Detached;
         }
         
-        // Now update
-        _context.Products.Update(entity);
+        // Now attach and mark as modified
+        _context.Entry(entity).State = EntityState.Modified;
     }
 
     /// <inheritdoc />
