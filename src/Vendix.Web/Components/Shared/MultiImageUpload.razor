@@ -107,15 +107,7 @@
 </div>
 
 @code {
-    private List<ImageItem> _images = new();
-
-    [Parameter]
-    public List<ImageItem> Images
-    {
-        get => _images;
-        set => _images = value ?? new List<ImageItem>();
-    }
-
+    [Parameter] public List<ImageItem> Images { get; set; } = new();
     [Parameter] public string Folder { get; set; } = "products";
     [Parameter] public int MaxImages { get; set; } = 10;
     [Parameter] public long MaxFileSizeBytes { get; set; } = 5 * 1024 * 1024;
@@ -139,7 +131,7 @@
     private async Task HandleFilesSelected(InputFileChangeEventArgs e)
     {
         _errorMessage = null;
-        var remainingSlots = MaxImages - _images.Count;
+        var remainingSlots = MaxImages - Images.Count;
         if (remainingSlots <= 0) return;
 
         var files = e.GetMultipleFiles(remainingSlots);
@@ -181,7 +173,7 @@
                 {
                     Url = publicUrl,
                     Alt = Path.GetFileNameWithoutExtension(file.Name),
-                    IsMain = !_images.Any() && !newImages.Any() // First image is main
+                    IsMain = !Images.Any() && !newImages.Any() // First image is main
                 });
 
                 Console.WriteLine($"[MultiImageUpload] Uploaded: {publicUrl}");
@@ -195,9 +187,9 @@
 
         if (newImages.Any())
         {
-            _images.AddRange(newImages);
-            Console.WriteLine($"[MultiImageUpload] Total images after upload: {_images.Count}");
-            await ImagesChanged.InvokeAsync(_images);
+            Images.AddRange(newImages);
+            Console.WriteLine($"[MultiImageUpload] Total images after upload: {Images.Count}");
+            await ImagesChanged.InvokeAsync(Images);
         }
 
         if (errors.Any())
@@ -213,17 +205,17 @@
 
     private async Task SetMainImage(int index)
     {
-        foreach (var img in _images)
+        foreach (var img in Images)
         {
             img.IsMain = false;
         }
-        _images[index].IsMain = true;
-        await ImagesChanged.InvokeAsync(_images);
+        Images[index].IsMain = true;
+        await ImagesChanged.InvokeAsync(Images);
     }
 
     private async Task RemoveImage(int index)
     {
-        var image = _images[index];
+        var image = Images[index];
 
         // Try to delete from storage
         try
@@ -234,15 +226,15 @@
         catch { /* Ignore */ }
 
         var wasMain = image.IsMain;
-        _images.RemoveAt(index);
+        Images.RemoveAt(index);
 
         // If removed image was main, set first as main
-        if (wasMain && _images.Any())
+        if (wasMain && Images.Any())
         {
-            _images[0].IsMain = true;
+            Images[0].IsMain = true;
         }
 
-        await ImagesChanged.InvokeAsync(_images);
+        await ImagesChanged.InvokeAsync(Images);
     }
 
     public class ImageItem
