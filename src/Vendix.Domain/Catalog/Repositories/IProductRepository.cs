@@ -65,4 +65,10 @@ public interface IProductRepository : IRepository<Product>
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Explicitly marks the Price owned entity as modified to ensure EF Core tracks changes.
+    /// </summary>
+    /// <param name="product">The product entity.</param>
+    void MarkPriceAsModified(Product product);
 }

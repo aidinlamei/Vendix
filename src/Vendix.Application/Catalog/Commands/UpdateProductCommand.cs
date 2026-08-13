@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vendix.Application.Common.Exceptions;
 using Vendix.Application.Common.Interfaces;
 using Vendix.Application.Common.Models;
+using Vendix.Domain.Catalog.Entities;
 using Vendix.Domain.Catalog.Enums;
 using Vendix.Domain.Catalog.Repositories;
 using Vendix.Domain.Catalog.ValueObjects;
@@ -46,7 +47,11 @@ public sealed class UpdateProductCommandHandler(
 
         product.UpdateName(request.Name);
         product.UpdateSlug(new Slug(request.Slug));
+        
+        // CRITICAL FIX: Update Price and explicitly mark owned entity as modified
         product.UpdatePrice(new Money(request.Price, request.Currency));
+        productRepository.MarkPriceAsModified(product);
+        
         product.UpdateProductType(request.ProductType);
         product.UpdateDescription(request.Description);
         product.AssignToCategory(request.CategoryId);
@@ -124,7 +129,8 @@ public sealed class UpdateProductCommandHandler(
             product.MarkAsDeleted();
         }
 
-        productRepository.Update(product);
+        // CRITICAL FIX: Don't call productRepository.Update()
+        // Entity is already tracked from GetByIdAsync, just save changes
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await cacheService.RemoveByPrefixAsync("products", cancellationToken);
 

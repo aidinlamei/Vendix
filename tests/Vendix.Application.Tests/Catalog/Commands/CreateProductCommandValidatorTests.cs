@@ -131,7 +131,6 @@ public class CreateProductCommandValidatorTests
     }
 
     [Theory]
-    [InlineData("")]
     [InlineData("a")] // Too short
     public async Task Validate_InvalidSlug_ShouldFail(string slug)
     {

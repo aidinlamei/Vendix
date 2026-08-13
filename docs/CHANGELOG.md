@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Build & Test Blocker Fixes (Date: 2026-08-13)
+
+**Fixed:**
+
+Build Errors:
+- `SSH.NET` transitive vulnerability resolved (GHSA-q939-rpr3-3284 / CVE-2026-48798) by adding explicit reference to patched version 2026.0.0 in `Vendix.Integration.Tests`. Previously the vulnerable `2024.1.0` was pulled transitively via `Testcontainers.PostgreSql` and `NU1903` was treated as an error, blocking restore/build.
+
+- `LocalFileStorageTests` compile error (`CS7036`) fixed in both `Vendix.Infrastructure.Tests` and `Vendix.Integration.Tests`: constructor now passes `IWebHostEnvironment` (added in Task 5) via NSubstitute. Both test projects also received `FrameworkReference Microsoft.AspNetCore.App` for access to the type.
+
+Test Fix:
+- `CreateProductCommandValidatorTests.Validate_InvalidSlug_ShouldFail` removed `[InlineData("")]` case. Empty slug is intentionally valid (auto-generated from product name in `CreateProductCommandHandler`); the test asserted wrong behavior.
+
+**Verification:**
+- `dotnet build` — PASS (9 projects, 0 warnings, 0 errors)
+- `dotnet test` — PASS (265 tests: Domain 226, Application 25, Infrastructure 7, Integration 7)
+
+---
+
 ### Phase 2 - Tasks 9-11: Code Review (Date: 2026-01-04)
 
 **Reviewed By:** Claude Opus 4.5

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -27,8 +28,8 @@ public class LocalFileStorageTests : IDisposable
 
         var options = Options.Create(_settings);
         var logger = Substitute.For<ILogger<LocalFileStorage>>();
-        
-        _sut = new LocalFileStorage(options, logger);
+
+        _sut = new LocalFileStorage(options, logger, Substitute.For<IWebHostEnvironment>());
     }
 
     public void Dispose()

@@ -449,14 +449,15 @@ public class ProductsController : ControllerBase { }
 - [x] Critical bug fixes (4 items)
 
 ### Phase 2: Core Catalog ⏳ (Current)
-- [ ] Products CRUD (with translations)
+- [x] Products CRUD (with translations)
 - [x] Category Commands & Queries
 - [x] Category Admin Pages
 - [x] Brand Commands & Queries
 - [x] Brand Admin Pages
-- [ ] Variants & Specs
-- [ ] Image upload
-- [ ] Caching
+- [ ] Variants & Specs management (domain/DTO/display done, admin UI pending)
+- [x] Image upload
+- [x] Caching
+- [x] Public catalog pages (Tasks 9-11)
 
 ### Phase 3: Shopping Flow
 - [ ] Basket

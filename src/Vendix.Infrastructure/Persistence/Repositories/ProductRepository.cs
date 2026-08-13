@@ -194,4 +194,44 @@ public class ProductRepository : IProductRepository
         ArgumentNullException.ThrowIfNull(entity);
         _context.Products.Remove(entity);
     }
+
+    /// <summary>
+    /// Explicitly marks the Price owned entity as modified to ensure EF Core tracks changes.
+    /// </summary>
+    /// <param name="product">The product entity.</param>
+    public void MarkPriceAsModified(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+        
+        var entry = _context.Entry(product);
+        
+        // Ensure the entity is being tracked and marked as modified
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Attach(product);
+            entry = _context.Entry(product);
+        }
+        
+        // Mark the entity as modified - this ensures EF Core will track all property changes
+        entry.State = EntityState.Modified;
+        
+        // For owned entities, we need to explicitly mark the owned entity properties
+        // Try to get the owned entity entry
+        var priceReference = entry.Reference(p => p.Price);
+        
+        // If the owned entity is not loaded, load it
+        if (!priceReference.IsLoaded)
+        {
+            priceReference.Load();
+        }
+        
+        // Get the owned entity entry and mark its properties as modified
+        var priceEntry = priceReference.TargetEntry;
+        if (priceEntry != null)
+        {
+            // Mark both properties of the owned entity as modified
+            priceEntry.Property(nameof(Vendix.Domain.Catalog.ValueObjects.Money.Amount)).IsModified = true;
+            priceEntry.Property(nameof(Vendix.Domain.Catalog.ValueObjects.Money.Currency)).IsModified = true;
+        }
+    }
 }

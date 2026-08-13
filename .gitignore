@@ -307,6 +307,9 @@ FodyWeavers.xsd
 .env.*
 !.env.example
 
+# Playwright MCP test artifacts
+.playwright-mcp/
+
 # User secrets
 secrets.json
 
