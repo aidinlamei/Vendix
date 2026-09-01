@@ -61,6 +61,10 @@ public class DatabaseCollection : ICollectionFixture<DatabaseFixture>
 {
 }
 
+/// <summary>
+/// Smoke test verifying that the <see cref="DatabaseFixture"/> successfully starts a Docker-provisioned
+/// PostgreSQL container, applies all migrations, and allows the context to connect.
+/// </summary>
 [Collection(nameof(DatabaseCollection))]
 public class DatabaseFixtureTests
 {
