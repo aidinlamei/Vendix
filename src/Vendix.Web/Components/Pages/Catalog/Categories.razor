@@ -1,0 +1,73 @@
+@page "/categories"
+@using MediatR
+@using Vendix.Application.Catalog.Queries
+@using Vendix.Application.Catalog.DTOs
+@inject IMediator Mediator
+
+@*
+    Categories Page - Public landing page listing all root product categories.
+    Fixes the dangling "/categories" link used by the header nav, footer, and
+    the homepage's "View Categories" button (none of which had a page behind them).
+*@
+
+<PageTitle>Categories - Vendix</PageTitle>
+
+<div class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
+    <div class="max-w-7xl mx-auto px-4 py-12">
+        <nav class="text-sm text-primary-200 mb-4">
+            <a href="/" class="hover:text-white">Home</a>
+            <span class="mx-2">/</span>
+            <span class="text-white">Categories</span>
+        </nav>
+        <h1 class="text-3xl font-bold">Shop by Category</h1>
+        <p class="mt-2 text-primary-100 max-w-2xl">Browse our wide range of product categories.</p>
+    </div>
+</div>
+
+<div class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        @if (_isLoading)
+        {
+            <div class="flex justify-center py-24">
+                <LoadingSpinner Size="large" />
+            </div>
+        }
+        else if (_categories is null || _categories.Count == 0)
+        {
+            <div class="text-center py-12 bg-white rounded-lg">
+                <p class="text-gray-500">No categories yet.</p>
+                <a href="/products" class="mt-4 inline-block text-primary-600 hover:text-primary-700">
+                    Browse all products
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                @foreach (var category in _categories)
+                {
+                    <a href="/category/@category.Slug" class="group p-6 bg-white rounded-xl shadow-sm hover:shadow-md hover:bg-primary-50 transition text-center">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-gray-50 text-gray-600 group-hover:text-primary-600 rounded-full shadow-sm mb-3 transition">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                        <h3 class="font-medium text-gray-900 group-hover:text-primary-600 transition">@category.Name</h3>
+                        <p class="text-xs text-gray-500 mt-1">@category.ProductCount @(category.ProductCount == 1 ? "product" : "products")</p>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<CategoryListDto>? _categories;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await Mediator.Send(new GetCategoriesQuery());
+        _isLoading = false;
+    }
+}
