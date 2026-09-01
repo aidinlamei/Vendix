@@ -4,6 +4,11 @@ using Vendix.Infrastructure.Persistence.Repositories;
 
 namespace Vendix.Integration.Tests.Persistence;
 
+/// <summary>
+/// Integration tests for CategoryRepository against a real PostgreSQL database.
+/// Tests verify that the repository correctly persists and retrieves categories,
+/// including hierarchy relationships and translations.
+/// </summary>
 [Collection(nameof(DatabaseCollection))]
 public class CategoryRepositoryTests
 {
