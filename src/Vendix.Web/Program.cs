@@ -1,6 +1,7 @@
 using Vendix.Application;
 using Vendix.Infrastructure;
 using Vendix.Web.Components;
+using Vendix.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddInfrastructure(connectionString, builder.Configuration);
+
+// Add storefront services
+builder.Services.AddScoped<CartService>();
+builder.Services.AddScoped<ToastService>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()

@@ -1,0 +1,29 @@
+@*
+    ToastHost - Renders global toast notifications pushed through ToastService.
+*@
+@implements IDisposable
+@inject ToastService ToastService
+
+<div class="fixed bottom-4 right-4 z-50 flex flex-col gap-3">
+    @foreach (var toast in ToastService.Toasts)
+    {
+        <Toast Type="@toast.Type" Title="@toast.Title" Message="@toast.Message" Duration="4000" OnClose="() => ToastService.Remove(toast)" />
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ToastService.ToastsChanged += HandleToastsChanged;
+    }
+
+    private void HandleToastsChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ToastService.ToastsChanged -= HandleToastsChanged;
+    }
+}

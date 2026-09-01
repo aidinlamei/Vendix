@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 
 @*
     MainLayout - Public site layout for Vendix e-commerce platform
@@ -61,7 +62,7 @@
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        <span class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        <span class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">@_cartCount</span>
                     </a>
 
                     <!-- Login Button -->
@@ -77,7 +78,7 @@
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        <span class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        <span class="absolute -top-1 -right-1 bg-primary-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">@_cartCount</span>
                     </a>
 
                     <!-- Hamburger Menu -->
@@ -201,10 +202,17 @@
             </div>
         </div>
     </footer>
+
+    <!-- Global Toasts -->
+    <ToastHost />
 </div>
 
 @code {
     private bool _isMobileMenuOpen;
+    private int _cartCount;
+
+    [Inject]
+    private CartService CartService { get; set; } = default!;
 
     /// <summary>
     /// Toggles the mobile menu visibility.
@@ -212,5 +220,27 @@
     private void ToggleMobileMenu()
     {
         _isMobileMenuOpen = !_isMobileMenuOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CartService.Changed += HandleCartChanged;
+            await CartService.InitializeAsync();
+            _cartCount = CartService.ItemCount;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleCartChanged()
+    {
+        _cartCount = CartService.ItemCount;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        CartService.Changed -= HandleCartChanged;
     }
 }

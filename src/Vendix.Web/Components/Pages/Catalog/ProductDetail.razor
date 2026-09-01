@@ -6,6 +6,8 @@
 @using Vendix.Domain.Catalog.Enums
 @inject IMediator Mediator
 @inject NavigationManager Navigation
+@inject CartService CartService
+@inject ToastService ToastService
 
 <PageTitle>@(_product?.Name ?? "Product") - Vendix</PageTitle>
 
@@ -176,7 +178,7 @@ else
                             </button>
                         </div>
                         
-                        <button class="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                        <button @onclick="AddToCart" class="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
                                 disabled="@(totalStock <= 0)">
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -266,6 +268,26 @@ else
     {
         if (_quantity > 1)
             _quantity--;
+    }
+
+    private async Task AddToCart()
+    {
+        if (_product is null)
+            return;
+
+        await CartService.AddAsync(new CartItem
+        {
+            ProductId = _product.Id,
+            Slug = _product.Slug,
+            Name = GetTitle(),
+            Sku = _product.Sku,
+            Price = _product.Price,
+            Currency = _product.Currency,
+            ImageUrl = _selectedImage,
+            Quantity = _quantity
+        });
+
+        ToastService.ShowSuccess($"\"{GetTitle()}\" added to cart.");
     }
 
     private string GetTitle()

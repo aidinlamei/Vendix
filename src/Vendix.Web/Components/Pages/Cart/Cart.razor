@@ -1,0 +1,248 @@
+@page "/cart"
+
+@*
+    Cart Page - Guest shopping cart with line items, quantity management, and order summary.
+*@
+
+<PageTitle>Shopping Cart - Vendix</PageTitle>
+
+@implements IDisposable
+
+@inject CartService CartService
+@inject ToastService ToastService
+
+@if (_isLoading)
+{
+    <div class="flex justify-center py-24">
+        <LoadingSpinner Size="large" />
+    </div>
+}
+else if (CartService.Items.Count == 0)
+{
+    <div class="max-w-7xl mx-auto px-4 py-24 text-center">
+        <div class="inline-flex items-center justify-center h-20 w-20 bg-gray-100 rounded-full mb-6">
+            <svg class="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900">Your cart is empty</h1>
+        <p class="mt-2 text-gray-500 max-w-md mx-auto">
+            Looks like you haven't added anything yet. Explore our catalog and find something you love.
+        </p>
+        <a href="/products" class="mt-6 inline-block bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition">
+            Browse Products
+        </a>
+    </div>
+}
+else
+{
+    <div class="bg-gray-50 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Shopping Cart</h1>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Cart Items -->
+                <div class="lg:col-span-2 space-y-4">
+                    @foreach (var item in CartService.Items)
+                    {
+                        <div class="bg-white rounded-lg shadow-sm p-4 flex gap-4">
+                            <!-- Image -->
+                            <a href="/product/@item.Slug" class="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.Name" class="w-full h-full object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                }
+                            </a>
+
+                            <!-- Details -->
+                            <div class="flex-1 flex flex-col">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <a href="/product/@item.Slug" class="font-medium text-gray-900 hover:text-primary-600 transition line-clamp-1">
+                                            @item.Name
+                                        </a>
+                                        <p class="text-sm text-gray-500 mt-1">SKU: @item.Sku</p>
+                                    </div>
+                                    <button @onclick="() => RemoveItem(item.ProductId)" class="p-1 text-gray-400 hover:text-red-600 transition" aria-label="Remove @item.Name">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div class="mt-auto flex items-center justify-between pt-3">
+                                    <!-- Quantity Stepper -->
+                                    <div class="flex items-center border rounded-lg">
+                                        <button @onclick="() => DecrementQuantity(item)" class="px-3 py-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-50" disabled="@(item.Quantity <= 1)" aria-label="Decrease quantity">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <span class="px-3 py-1.5 font-medium min-w-10 text-center">@item.Quantity</span>
+                                        <button @onclick="() => IncrementQuantity(item)" class="px-3 py-1.5 text-gray-600 hover:bg-gray-100" aria-label="Increase quantity">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Line Total -->
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold text-gray-900">
+                                            <PriceDisplay Price="@item.LineTotal" Currency="@item.Currency" />
+                                        </p>
+                                        <p class="text-xs text-gray-500"><PriceDisplay Price="@item.Price" Currency="@item.Currency" /> each</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Actions -->
+                    <div class="flex justify-between items-center">
+                        <a href="/products" class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition">
+                            <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                            </svg>
+                            Continue Shopping
+                        </a>
+                        <button @onclick="ClearCart" class="text-sm text-gray-500 hover:text-red-600 transition">
+                            Clear Cart
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-sm p-6 sticky top-20">
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+
+                        <dl class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <dt class="text-gray-600">Subtotal (@CartService.ItemCount @(CartService.ItemCount == 1 ? "item" : "items"))</dt>
+                                <dd class="font-medium text-gray-900"><PriceDisplay Price="@CartService.Subtotal" Currency="@Currency" /></dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-gray-600">Shipping</dt>
+                                <dd class="font-medium text-gray-900">
+                                    @if (Shipping == 0)
+                                    {
+                                        <span class="text-green-600">Free</span>
+                                    }
+                                    else
+                                    {
+                                        <PriceDisplay Price="@Shipping" Currency="@Currency" />
+                                    }
+                                </dd>
+                            </div>
+                            @if (Shipping > 0)
+                            {
+                                <p class="text-xs text-gray-500">
+                                    Free shipping on orders over $50
+                                </p>
+                            }
+                            <div class="border-t pt-3 flex justify-between items-center">
+                                <dt class="text-base font-bold text-gray-900">Total</dt>
+                                <dd class="text-xl font-bold text-primary-600">
+                                    <PriceDisplay Price="@Total" Currency="@Currency" />
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <button @onclick="Checkout" class="mt-6 w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition">
+                            Proceed to Checkout
+                        </button>
+                        <p class="mt-3 text-xs text-gray-500 text-center">Taxes calculated at checkout</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Clear Cart Confirmation -->
+<ConfirmDialog IsVisible="@_confirmClearVisible"
+               IsVisibleChanged="@((bool value) => _confirmClearVisible = value)"
+               Title="Clear Cart"
+               Message="Are you sure you want to remove all items from your cart?"
+               Type="danger"
+               ConfirmText="Clear Cart"
+               OnConfirm="ConfirmClear" />
+
+@code {
+    private bool _isLoading = true;
+    private bool _confirmClearVisible;
+
+    private const decimal FreeShippingThreshold = 50m;
+    private const decimal StandardShipping = 4.99m;
+
+    private decimal Shipping => CartService.Subtotal >= FreeShippingThreshold || CartService.Subtotal == 0 ? 0 : StandardShipping;
+
+    private decimal Total => CartService.Subtotal + Shipping;
+
+    private string Currency => CartService.Currency ?? "USD";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CartService.Changed += HandleCartChanged;
+            await CartService.InitializeAsync();
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleCartChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RemoveItem(Guid productId)
+    {
+        await CartService.RemoveAsync(productId);
+        ToastService.ShowInfo("Item removed from cart.");
+    }
+
+    private async Task IncrementQuantity(CartItem item)
+    {
+        if (item.Quantity < 99)
+            await CartService.SetQuantityAsync(item.ProductId, item.Quantity + 1);
+    }
+
+    private async Task DecrementQuantity(CartItem item)
+    {
+        if (item.Quantity > 1)
+            await CartService.SetQuantityAsync(item.ProductId, item.Quantity - 1);
+    }
+
+    private void ClearCart()
+    {
+        _confirmClearVisible = true;
+    }
+
+    private async Task ConfirmClear()
+    {
+        await CartService.ClearAsync();
+        ToastService.ShowInfo("Your cart has been cleared.");
+    }
+
+    private async Task Checkout()
+    {
+        await Task.CompletedTask;
+        ToastService.ShowInfo("Checkout is coming soon.", "Coming Soon");
+    }
+
+    public void Dispose()
+    {
+        CartService.Changed -= HandleCartChanged;
+    }
+}
