@@ -4,7 +4,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Vendix.Application.Common.Interfaces;
+using Vendix.Domain.Basket.Repositories;
 using Vendix.Domain.Catalog.Repositories;
+using Vendix.Domain.Ordering.Repositories;
 using Vendix.Infrastructure.Caching;
 using Vendix.Infrastructure.FileStorage;
 using Vendix.Infrastructure.Identity;
@@ -86,6 +88,8 @@ public static class DependencyInjection
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
+        services.AddScoped<IBasketRepository, BasketRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         // File Storage
         services.Configure<FileStorageSettings>(configuration.GetSection(FileStorageSettings.SectionName));
