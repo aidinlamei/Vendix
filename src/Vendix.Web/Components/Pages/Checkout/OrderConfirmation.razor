@@ -1,0 +1,84 @@
+@page "/checkout/confirmation/{OrderId:guid}"
+
+<PageTitle>Order Confirmed - Vendix</PageTitle>
+
+@inject IMediator Mediator
+
+@if (_isLoading)
+{
+    <div class="flex justify-center py-24">
+        <LoadingSpinner Size="large" />
+    </div>
+}
+else if (_order is null)
+{
+    <div class="max-w-2xl mx-auto px-4 py-24 text-center">
+        <h1 class="text-2xl font-bold text-gray-900">Order not found</h1>
+        <a href="/" class="mt-6 inline-block bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition">
+            Back to Home
+        </a>
+    </div>
+}
+else
+{
+    <div class="bg-gray-50 min-h-screen">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <div class="inline-flex items-center justify-center h-16 w-16 bg-success/10 rounded-full mb-4">
+                    <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Thank you for your order!</h1>
+                <p class="mt-2 text-gray-500">Order <span class="font-medium text-gray-900">@_order.OrderNumber</span></p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+                <h2 class="text-lg font-bold text-gray-900 mb-4">Order Details</h2>
+                <div class="space-y-3">
+                    @foreach (var item in _order.Items)
+                    {
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-700">@item.ProductName x @item.Quantity</span>
+                            <span class="font-medium text-gray-900"><PriceDisplay Price="@item.LineTotal" Currency="@_order.Currency" /></span>
+                        </div>
+                    }
+                </div>
+                <div class="border-t mt-4 pt-4 space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span class="font-medium text-gray-900"><PriceDisplay Price="@_order.Subtotal" Currency="@_order.Currency" /></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Shipping</span>
+                        <span class="font-medium text-gray-900"><PriceDisplay Price="@_order.ShippingCost" Currency="@_order.Currency" /></span>
+                    </div>
+                    <div class="flex justify-between text-base font-bold">
+                        <span class="text-gray-900">Total</span>
+                        <span class="text-primary-600"><PriceDisplay Price="@_order.Total" Currency="@_order.Currency" /></span>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-gray-500">Shipping to: @_order.ShippingAddress</p>
+            </div>
+
+            <div class="text-center mt-6">
+                <a href="/products" class="text-primary-600 hover:text-primary-700 font-medium transition">Continue Shopping</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    private bool _isLoading = true;
+    private Vendix.Application.Ordering.DTOs.OrderDto? _order;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(OrderId));
+        _order = result.IsSuccess ? result.Value : null;
+        _isLoading = false;
+    }
+}
