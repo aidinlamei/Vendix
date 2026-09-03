@@ -1,20 +1,21 @@
-using System.Text.Json;
-using Microsoft.JSInterop;
+using MediatR;
+using Vendix.Application.Basket.Commands;
+using Vendix.Application.Basket.DTOs;
+using Vendix.Application.Basket.Queries;
 
 namespace Vendix.Web.Services;
 
 /// <summary>
-/// Manages the guest shopping cart. Items are persisted in localStorage via JS interop
-/// and kept in memory so multiple components stay in sync through the <see cref="Changed"/> event.
+/// Client-facing cart service backed by the server-side Basket aggregate (see
+/// <c>Vendix.Application.Basket</c>). Keeps the same public surface the UI already depends on
+/// (Items, ItemCount, Subtotal, Currency, Changed) while persisting through MediatR
+/// commands/queries instead of localStorage, so a basket now survives across devices/tabs for
+/// the same buyer ID (see <see cref="BuyerIdProvider"/>).
 /// </summary>
 public class CartService
 {
-    private const string StorageKey = "vendix.cart";
-    private const string JsNamespace = "vendix.cart";
-
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
-    private readonly IJSRuntime _js;
+    private readonly IMediator _mediator;
+    private readonly BuyerIdProvider _buyerIdProvider;
     private readonly ILogger<CartService> _logger;
     private List<CartItem> _items = [];
     private bool _initialized;
@@ -24,9 +25,13 @@ public class CartService
     /// </summary>
     public event Action? Changed;
 
-    public CartService(IJSRuntime js, ILogger<CartService> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CartService"/> class.
+    /// </summary>
+    public CartService(IMediator mediator, BuyerIdProvider buyerIdProvider, ILogger<CartService> logger)
     {
-        _js = js;
+        _mediator = mediator;
+        _buyerIdProvider = buyerIdProvider;
         _logger = logger;
     }
 
@@ -51,51 +56,49 @@ public class CartService
     public string? Currency => _items.FirstOrDefault()?.Currency;
 
     /// <summary>
-    /// Loads the cart from localStorage. Safe to call multiple times.
+    /// Loads the basket from the server. Safe to call multiple times.
     /// </summary>
     public async Task InitializeAsync()
     {
         if (_initialized)
+        {
             return;
+        }
 
         _initialized = true;
 
         try
         {
-            var json = await _js.InvokeAsync<string>($"{JsNamespace}.load");
-            if (string.IsNullOrWhiteSpace(json))
-                return;
-
-            var loaded = JsonSerializer.Deserialize<List<CartItem>>(json, JsonOptions);
-            if (loaded is not null && loaded.Count > 0)
-            {
-                _items = loaded;
-                Changed?.Invoke();
-            }
+            var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+            var basket = await _mediator.Send(new GetBasketQuery(buyerId));
+            _items = MapToCartItems(basket);
+            Changed?.Invoke();
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load cart from localStorage.");
+            _logger.LogWarning(ex, "Could not load basket.");
         }
     }
 
     /// <summary>
-    /// Adds an item to the cart, merging quantities if the product already exists.
+    /// Adds a product to the basket, merging quantities if it's already present. Only
+    /// <see cref="CartItem.ProductId"/> and <see cref="CartItem.Quantity"/> are sent to the
+    /// server — price/name/etc. are re-resolved server-side from the authoritative product.
     /// </summary>
     public async Task AddAsync(CartItem item)
     {
-        var existing = _items.FirstOrDefault(i => i.ProductId == item.ProductId);
-        if (existing is not null)
+        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+        var result = await _mediator.Send(new AddToBasketCommand(buyerId, item.ProductId, item.Quantity));
+
+        if (result.IsSuccess)
         {
-            existing.Quantity += item.Quantity;
+            _items = MapToCartItems(result.Value);
+            Changed?.Invoke();
         }
         else
         {
-            _items.Add(item);
+            _logger.LogWarning("Could not add product {ProductId} to basket: {Error}", item.ProductId, result.Error);
         }
-
-        await PersistAsync();
-        Changed?.Invoke();
     }
 
     /// <summary>
@@ -103,21 +106,14 @@ public class CartService
     /// </summary>
     public async Task SetQuantityAsync(Guid productId, int quantity)
     {
-        var item = _items.FirstOrDefault(i => i.ProductId == productId);
-        if (item is null)
-            return;
+        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+        var result = await _mediator.Send(new UpdateBasketItemQuantityCommand(buyerId, productId, quantity));
 
-        if (quantity <= 0)
+        if (result.IsSuccess)
         {
-            _items.Remove(item);
+            _items = MapToCartItems(result.Value);
+            Changed?.Invoke();
         }
-        else
-        {
-            item.Quantity = quantity;
-        }
-
-        await PersistAsync();
-        Changed?.Invoke();
     }
 
     /// <summary>
@@ -125,11 +121,14 @@ public class CartService
     /// </summary>
     public async Task RemoveAsync(Guid productId)
     {
-        if (_items.RemoveAll(i => i.ProductId == productId) == 0)
-            return;
+        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+        var result = await _mediator.Send(new RemoveFromBasketCommand(buyerId, productId));
 
-        await PersistAsync();
-        Changed?.Invoke();
+        if (result.IsSuccess)
+        {
+            _items = MapToCartItems(result.Value);
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>
@@ -137,11 +136,9 @@ public class CartService
     /// </summary>
     public async Task ClearAsync()
     {
-        if (_items.Count == 0)
-            return;
-
-        _items.Clear();
-        await PersistAsync();
+        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+        await _mediator.Send(new ClearBasketCommand(buyerId));
+        _items = [];
         Changed?.Invoke();
     }
 
@@ -151,23 +148,22 @@ public class CartService
     public int GetQuantity(Guid productId)
         => _items.FirstOrDefault(i => i.ProductId == productId)?.Quantity ?? 0;
 
-    private async Task PersistAsync()
-    {
-        try
+    /// <summary>
+    /// Gets the current buyer ID. Used by the Checkout page to place an order against the
+    /// same basket this service manages.
+    /// </summary>
+    public Task<string> GetBuyerIdAsync() => _buyerIdProvider.GetOrCreateAsync();
+
+    private static List<CartItem> MapToCartItems(BasketDto basket) =>
+        basket.Items.Select(i => new CartItem
         {
-            var json = JsonSerializer.Serialize(_items, JsonOptions);
-            if (_items.Count == 0)
-            {
-                await _js.InvokeVoidAsync($"{JsNamespace}.clear");
-            }
-            else
-            {
-                await _js.InvokeVoidAsync($"{JsNamespace}.save", json);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not persist cart to localStorage.");
-        }
-    }
+            ProductId = i.ProductId,
+            Slug = i.ProductSlug,
+            Name = i.ProductName,
+            Sku = i.Sku,
+            Price = i.UnitPrice,
+            Currency = i.Currency,
+            ImageUrl = i.ImageUrl,
+            Quantity = i.Quantity
+        }).ToList();
 }
