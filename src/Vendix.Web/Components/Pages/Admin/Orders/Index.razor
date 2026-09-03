@@ -1,0 +1,101 @@
+@page "/admin/orders"
+@layout AdminLayout
+
+<PageTitle>Orders - Vendix Admin</PageTitle>
+
+@inject IMediator Mediator
+
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+        <select @bind="_statusFilter" @bind:after="LoadAsync" class="rounded-lg border-gray-300 text-sm">
+            <option value="">All Statuses</option>
+            @foreach (var status in Enum.GetValues<Vendix.Domain.Ordering.Enums.OrderStatus>())
+            {
+                <option value="@status">@status</option>
+            }
+        </select>
+    </div>
+
+    @if (_isLoading)
+    {
+        <LoadingSpinner Size="large" />
+    }
+    else if (_orders is null || _orders.Items.Count == 0)
+    {
+        <div class="bg-white rounded-lg shadow-sm p-12 text-center text-gray-500">
+            No orders found.
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var order in _orders.Items)
+                    {
+                        <tr>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">@order.OrderNumber</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">@order.BuyerEmail</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">@order.Status</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900"><PriceDisplay Price="@order.Total" Currency="@order.Currency" /></td>
+                            <td class="px-6 py-4 text-sm text-gray-500">@order.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td class="px-6 py-4 text-sm text-right">
+                                <a href="/admin/orders/@order.Id" class="text-primary-600 hover:text-primary-700 font-medium">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4">
+            <Pagination CurrentPage="_pageNumber"
+                        TotalItems="_orders.TotalCount"
+                        PageSize="_pageSize"
+                        OnPageChange="OnPageChanged" />
+        </div>
+    }
+</div>
+
+@code {
+    private Vendix.Application.Common.Models.PaginatedList<Vendix.Application.Ordering.DTOs.OrderListDto>? _orders;
+    private bool _isLoading = true;
+    private int _pageNumber = 1;
+    private const int _pageSize = 10;
+    private string _statusFilter = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        Vendix.Domain.Ordering.Enums.OrderStatus? status = string.IsNullOrEmpty(_statusFilter)
+            ? null
+            : Enum.Parse<Vendix.Domain.Ordering.Enums.OrderStatus>(_statusFilter);
+
+        _orders = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrdersQuery(_pageNumber, _pageSize, status));
+        _isLoading = false;
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        _pageNumber = page;
+        await LoadAsync();
+    }
+}
