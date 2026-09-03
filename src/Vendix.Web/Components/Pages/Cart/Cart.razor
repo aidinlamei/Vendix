@@ -9,6 +9,7 @@
 @implements IDisposable
 
 @inject CartService CartService
+@inject NavigationManager Navigation
 @inject ToastService ToastService
 
 @if (_isLoading)
@@ -235,10 +236,9 @@ else
         ToastService.ShowInfo("Your cart has been cleared.");
     }
 
-    private async Task Checkout()
+    private void Checkout()
     {
-        await Task.CompletedTask;
-        ToastService.ShowInfo("Checkout is coming soon.", "Coming Soon");
+        Navigation.NavigateTo("/checkout");
     }
 
     public void Dispose()

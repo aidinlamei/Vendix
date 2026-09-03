@@ -1,0 +1,136 @@
+@page "/checkout"
+
+@*
+    Checkout Page - Collects buyer email and shipping address, then places the order
+    from the current basket.
+*@
+
+<PageTitle>Checkout - Vendix</PageTitle>
+
+@implements IDisposable
+
+@using MediatR
+@using Vendix.Application.Ordering.Commands
+
+@inject CartService CartService
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+
+@if (_isLoading)
+{
+    <div class="flex justify-center py-24">
+        <LoadingSpinner Size="large" />
+    </div>
+}
+else
+{
+    <div class="bg-gray-50 min-h-screen">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <EditForm Model="_model" OnValidSubmit="PlaceOrder" class="bg-white rounded-lg shadow-sm p-6 space-y-4">
+                        <DataAnnotationsValidator />
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <InputText @bind-Value="_model.Email" class="w-full rounded-lg border-gray-300" placeholder="you@example.com" />
+                            <ValidationMessage For="@(() => _model.Email)" class="text-sm text-red-600" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Shipping Address</label>
+                            <InputTextArea @bind-Value="_model.ShippingAddress" rows="4" class="w-full rounded-lg border-gray-300" placeholder="Street, city, postal code, country" />
+                            <ValidationMessage For="@(() => _model.ShippingAddress)" class="text-sm text-red-600" />
+                        </div>
+
+                        <button type="submit" class="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50" disabled="@_isSubmitting">
+                            @(_isSubmitting ? "Placing order..." : "Place Order")
+                        </button>
+                    </EditForm>
+                </div>
+
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-sm p-6 sticky top-20">
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+                        <dl class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <dt class="text-gray-600">Subtotal (@CartService.ItemCount @(CartService.ItemCount == 1 ? "item" : "items"))</dt>
+                                <dd class="font-medium text-gray-900"><PriceDisplay Price="@CartService.Subtotal" Currency="@(CartService.Currency ?? "USD")" /></dd>
+                            </div>
+                            <div class="border-t pt-3 flex justify-between items-center">
+                                <dt class="text-base font-bold text-gray-900">Total</dt>
+                                <dd class="text-xl font-bold text-primary-600">
+                                    <PriceDisplay Price="@CartService.Subtotal" Currency="@(CartService.Currency ?? "USD")" />
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private readonly CheckoutFormModel _model = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CartService.InitializeAsync();
+            if (CartService.Items.Count == 0)
+            {
+                Navigation.NavigateTo("/cart");
+                return;
+            }
+
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PlaceOrder()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var buyerId = await CartService.GetBuyerIdAsync();
+            var result = await Mediator.Send(new PlaceOrderCommand(buyerId, _model.Email, _model.ShippingAddress));
+
+            if (result.IsSuccess)
+            {
+                await CartService.ClearAsync();
+                Navigation.NavigateTo($"/checkout/confirmation/{result.Value.OrderId}");
+            }
+            else
+            {
+                ToastService.ShowError(result.Error ?? "Could not place order.");
+            }
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class CheckoutFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "A valid email address is required.")]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Shipping address is required.")]
+        [System.ComponentModel.DataAnnotations.StringLength(500, ErrorMessage = "Shipping address must not exceed 500 characters.")]
+        public string ShippingAddress { get; set; } = string.Empty;
+    }
+}
