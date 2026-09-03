@@ -114,6 +114,10 @@ public class CartService
             _items = MapToCartItems(result.Value);
             Changed?.Invoke();
         }
+        else
+        {
+            _logger.LogWarning("Could not update quantity for product {ProductId} to {Quantity}: {Error}", productId, quantity, result.Error);
+        }
     }
 
     /// <summary>
@@ -128,6 +132,10 @@ public class CartService
         {
             _items = MapToCartItems(result.Value);
             Changed?.Invoke();
+        }
+        else
+        {
+            _logger.LogWarning("Could not remove product {ProductId} from basket: {Error}", productId, result.Error);
         }
     }
 
