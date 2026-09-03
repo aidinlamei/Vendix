@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 2 - Task 12: Catalog Integration Tests (Date: 2026-09-03)
+
+**Added:**
+
+Integration Tests (tests/Vendix.Integration.Tests/Persistence/):
+- `DatabaseFixture.cs` - Testcontainers PostgreSQL 16 fixture, one container shared per test collection, applies EF Core migrations on startup
+- `ProductRepositoryTests.cs` - Add/GetById round-trip, case-insensitive GetBySlug, SearchAsync category filter, price update persistence
+- `CategoryRepositoryTests.cs` - Root category filtering, parent/children loading, translation persistence
+- `BrandRepositoryTests.cs` - Add/GetBySlug round-trip, unique slug constraint enforcement, soft-delete query filter exclusion
+
+**Technical Decisions:**
+- Used Testcontainers instead of an in-memory EF provider so unique indexes, owned-entity (Money) column mapping, and PostgreSQL-specific behavior (ILike, split queries) are exercised for real.
+- Each test creates a fresh `VendixDbContext` per arrange/act/assert step to mirror how production request-scoped contexts behave, avoiding false passes from a lingering change tracker.
+
+**Notes:**
+- Requires Docker running locally / in CI for `Vendix.Integration.Tests` to execute.
+- Phase 2 (Core Catalog) is now 12/12 tasks complete.
+
+---
+
 ### Build & Test Blocker Fixes (Date: 2026-08-13)
 
 **Fixed:**

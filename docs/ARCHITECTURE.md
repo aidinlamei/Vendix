@@ -2,7 +2,7 @@
 
 > **Version:** 2.2.0
 > **Last Updated:** 2026-01-04
-> **Status:** Phase 2 - Core Catalog (11/12 tasks complete)
+> **Status:** Phase 2 - Core Catalog (12/12 tasks complete) ✅
 > **.NET Version:** 10.0 LTS (Supported until November 2028)
 
 ---
@@ -690,7 +690,7 @@ src/Vendix.Web/Components/Pages/Catalog/
 | 9 | Public Products Page | ✅ |
 | 10 | Public Product Detail Page | ✅ |
 | 11 | Public Category Page | ✅ |
-| 12 | Unit & Integration Tests | ⬜ |
+| 12 | Unit & Integration Tests | ✅ |
 
 ### Code Reviews
 
@@ -704,6 +704,7 @@ src/Vendix.Web/Components/Pages/Catalog/
 | Task 7 | `docs/REVIEW-Phase2-Task7-ImageUploadComponent.md` | - |
 | Task 8 | `docs/REVIEW-Phase2-Task8-CacheActivation.md` | - |
 | Tasks 9-11 | `docs/REVIEW-Phase2-Tasks9-11-PublicCatalogPages.md` | 88% |
+| Task 12 | `docs/CHANGELOG.md` (Phase 2 - Task 12 entry) | - |
 
 ---
 
