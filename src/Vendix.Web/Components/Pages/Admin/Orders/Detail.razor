@@ -91,13 +91,25 @@
     private async Task LoadAsync()
     {
         _isLoading = true;
-        var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(Id));
-        _order = result.IsSuccess ? result.Value : null;
+        try
+        {
+            var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(Id));
+            _order = result.IsSuccess ? result.Value : null;
+        }
+        catch
+        {
+            // Order not found - handled in UI
+            _order = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
         if (_order is not null)
         {
             _selectedStatus = Enum.Parse<Vendix.Domain.Ordering.Enums.OrderStatus>(_order.Status);
         }
-        _isLoading = false;
     }
 
     private async Task UpdateStatus()

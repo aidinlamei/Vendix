@@ -77,8 +77,22 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(OrderId));
-        _order = result.IsSuccess ? result.Value : null;
-        _isLoading = false;
+        try
+        {
+            var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(OrderId));
+            if (result.IsSuccess)
+            {
+                _order = result.Value;
+            }
+        }
+        catch
+        {
+            // Order not found - handled in UI
+            _order = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 }
