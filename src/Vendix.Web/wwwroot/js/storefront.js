@@ -21,3 +21,19 @@ window.vendix.cart = {
         }
     }
 };
+
+window.vendix.buyer = {
+    load: function () {
+        try {
+            return window.localStorage.getItem('vendix.buyerId') || '';
+        } catch (e) {
+            return '';
+        }
+    },
+    save: function (id) {
+        try {
+            window.localStorage.setItem('vendix.buyerId', id);
+        } catch (e) {
+        }
+    }
+};

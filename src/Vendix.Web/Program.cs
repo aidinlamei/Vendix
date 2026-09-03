@@ -18,6 +18,7 @@ builder.Services.AddInfrastructure(connectionString, builder.Configuration);
 
 // Add storefront services
 builder.Services.AddScoped<CartService>();
+builder.Services.AddScoped<BuyerIdProvider>();
 builder.Services.AddScoped<ToastService>();
 
 // Add Health Checks
