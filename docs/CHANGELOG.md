@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 3: Basket, Checkout & Order (Date: 2026-09-03)
+
+**Added:**
+
+Domain (src/Vendix.Domain/):
+- `Basket/Entities/Basket.cs`, `BasketItem.cs` - Basket aggregate keyed by anonymous BuyerId, snapshotting product name/slug/SKU/price/image per line
+- `Basket/Repositories/IBasketRepository.cs`
+- `Ordering/Entities/Order.cs`, `OrderItem.cs` - Order aggregate with Pending/Processing/Shipped/Delivered/Cancelled lifecycle
+- `Ordering/ValueObjects/OrderNumber.cs` - Human-readable "ORD-yyyyMMdd-XXXXXX" order numbers
+- `Ordering/Enums/OrderStatus.cs`
+- `Ordering/Repositories/IOrderRepository.cs`
+
+Infrastructure:
+- EF Core configurations, migration `AddBasketAndOrder`, `BasketRepository`, `OrderRepository`
+
+Application:
+- Basket commands (Add/UpdateQuantity/Remove/Clear) + `GetBasketQuery`
+- Order commands (`PlaceOrder`/`Cancel`/`UpdateStatus`) + queries (`GetOrderById`/`GetMyOrders`/`GetOrders`)
+
+Web:
+- `BuyerIdProvider` - anonymous buyer identity via localStorage (guest baskets/orders ahead of Phase 5 auth)
+- `CartService` rewritten to persist through the server-side Basket instead of localStorage
+- `/checkout` and `/checkout/confirmation/{orderId}` pages
+- `/admin/orders` (list + filter) and `/admin/orders/{id}` (detail + status update + cancel) — fills in the sidebar link that has pointed nowhere since Phase 1/2
+
+**Technical Decisions:**
+- No authentication yet (Phase 5), so Basket/Order are keyed by an anonymous BuyerId persisted client-side, matching the pattern the previous localStorage-only cart already used for cart data.
+- Product price/name/image are re-resolved server-side from the authoritative Product on every `AddToBasketCommand` — the client never supplies pricing.
+- A basket is emptied (not deleted) after checkout so returning buyers reuse the same row.
+- Shipping address is a free-text string; a structured `Address` value object is deferred to Phase 7 per the existing architecture doc.
+
+**Notes:**
+- TODO: Payment integration (Phase 4) — orders are currently placed with no payment step.
+- TODO: "My Orders" buyer-facing page using the already-built `GetMyOrdersQuery` (not wired to a page in this phase).
+- TODO: Replace the anonymous-GUID order-number collision risk with a DB sequence if order volume grows.
+
+---
+
 ### Phase 2 - Task 12: Catalog Integration Tests (Date: 2026-09-03)
 
 **Added:**
