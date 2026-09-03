@@ -65,6 +65,34 @@ public class VendixDbContext : DbContext
 
     #endregion
 
+    #region Basket Entities
+
+    /// <summary>
+    /// Gets or sets the baskets DbSet.
+    /// </summary>
+    public DbSet<Vendix.Domain.Basket.Entities.Basket> Baskets => Set<Vendix.Domain.Basket.Entities.Basket>();
+
+    /// <summary>
+    /// Gets or sets the basket items DbSet.
+    /// </summary>
+    public DbSet<Vendix.Domain.Basket.Entities.BasketItem> BasketItems => Set<Vendix.Domain.Basket.Entities.BasketItem>();
+
+    #endregion
+
+    #region Ordering Entities
+
+    /// <summary>
+    /// Gets or sets the orders DbSet.
+    /// </summary>
+    public DbSet<Vendix.Domain.Ordering.Entities.Order> Orders => Set<Vendix.Domain.Ordering.Entities.Order>();
+
+    /// <summary>
+    /// Gets or sets the order items DbSet.
+    /// </summary>
+    public DbSet<Vendix.Domain.Ordering.Entities.OrderItem> OrderItems => Set<Vendix.Domain.Ordering.Entities.OrderItem>();
+
+    #endregion
+
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types
     /// exposed in <see cref="DbSet{TEntity}"/> properties on your derived context.
