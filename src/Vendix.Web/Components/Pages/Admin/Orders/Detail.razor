@@ -48,7 +48,7 @@
         <div class="bg-white rounded-lg shadow-sm p-6 flex items-center gap-4">
             <label class="text-sm font-medium text-gray-700">Status:</label>
             <select @bind="_selectedStatus" class="rounded-lg border-gray-300 text-sm">
-                @foreach (var status in Enum.GetValues<Vendix.Domain.Ordering.Enums.OrderStatus>())
+                @foreach (var status in Enum.GetValues<Vendix.Domain.Ordering.Enums.OrderStatus>().Where(s => s != Vendix.Domain.Ordering.Enums.OrderStatus.Cancelled))
                 {
                     <option value="@status">@status</option>
                 }
@@ -122,7 +122,7 @@
         }
         else
         {
-            ToastService.ShowInfo(result.Error ?? "Could not update status.", "Error");
+            ToastService.ShowError(result.Error ?? "Could not update status.");
         }
     }
 
@@ -136,7 +136,7 @@
         }
         else
         {
-            ToastService.ShowInfo(result.Error ?? "Could not cancel order.", "Error");
+            ToastService.ShowError(result.Error ?? "Could not cancel order.");
         }
     }
 }

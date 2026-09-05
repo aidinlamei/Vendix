@@ -64,6 +64,7 @@ public class OrderRepository : IOrderRepository
         var items = await query
             .Include(o => o.Items)
             .OrderByDescending(o => o.CreatedAt)
+            .ThenBy(o => o.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

@@ -93,4 +93,17 @@ public class OrderTests
 
         act.Should().Throw<InvalidOperationException>();
     }
+
+    [Theory]
+    [InlineData(OrderStatus.Shipped)]
+    [InlineData(OrderStatus.Delivered)]
+    public void UpdateStatus_ToCancelledOnShippedOrDelivered_ThrowsInvalidOperationException(OrderStatus status)
+    {
+        var order = CreateValidOrder();
+        order.UpdateStatus(status);
+
+        var act = () => order.UpdateStatus(OrderStatus.Cancelled);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }

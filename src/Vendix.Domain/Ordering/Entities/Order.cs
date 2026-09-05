@@ -153,6 +153,12 @@ public class Order : AggregateRoot, IAuditableEntity
             throw new InvalidOperationException("Cannot change the status of a cancelled order.");
         }
 
+        if (status == OrderStatus.Cancelled)
+        {
+            Cancel();
+            return;
+        }
+
         Status = status;
     }
 }

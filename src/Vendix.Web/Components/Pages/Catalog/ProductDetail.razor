@@ -275,7 +275,7 @@ else
         if (_product is null)
             return;
 
-        await CartService.AddAsync(new CartItem
+        var added = await CartService.AddAsync(new CartItem
         {
             ProductId = _product.Id,
             Slug = _product.Slug,
@@ -287,7 +287,14 @@ else
             Quantity = _quantity
         });
 
-        ToastService.ShowSuccess($"\"{GetTitle()}\" added to cart.");
+        if (added)
+        {
+            ToastService.ShowSuccess($"\"{GetTitle()}\" added to cart.");
+        }
+        else
+        {
+            ToastService.ShowError("Could not add this product to your cart.");
+        }
     }
 
     private string GetTitle()

@@ -55,6 +55,14 @@ public class CartService
     /// </summary>
     public string? Currency => _items.FirstOrDefault()?.Currency;
 
+    private const decimal FreeShippingThreshold = 50m;
+    private const decimal StandardShippingCost = 4.99m;
+
+    /// <summary>
+    /// Gets the shipping cost for the current cart contents (free above <see cref="FreeShippingThreshold"/>).
+    /// </summary>
+    public decimal ShippingCost => Subtotal == 0 || Subtotal >= FreeShippingThreshold ? 0m : StandardShippingCost;
+
     /// <summary>
     /// Loads the basket from the server. Safe to call multiple times.
     /// </summary>
@@ -85,19 +93,29 @@ public class CartService
     /// <see cref="CartItem.ProductId"/> and <see cref="CartItem.Quantity"/> are sent to the
     /// server — price/name/etc. are re-resolved server-side from the authoritative product.
     /// </summary>
-    public async Task AddAsync(CartItem item)
+    public async Task<bool> AddAsync(CartItem item)
     {
-        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
-        var result = await _mediator.Send(new AddToBasketCommand(buyerId, item.ProductId, item.Quantity));
+        try
+        {
+            var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+            var result = await _mediator.Send(new AddToBasketCommand(buyerId, item.ProductId, item.Quantity));
 
-        if (result.IsSuccess)
-        {
-            _items = MapToCartItems(result.Value);
-            Changed?.Invoke();
+            if (result.IsSuccess)
+            {
+                _items = MapToCartItems(result.Value);
+                Changed?.Invoke();
+                return true;
+            }
+            else
+            {
+                _logger.LogWarning("Could not add product {ProductId} to basket: {Error}", item.ProductId, result.Error);
+                return false;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("Could not add product {ProductId} to basket: {Error}", item.ProductId, result.Error);
+            _logger.LogWarning(ex, "Could not add product to basket (unexpected error).");
+            return false;
         }
     }
 
@@ -106,17 +124,24 @@ public class CartService
     /// </summary>
     public async Task SetQuantityAsync(Guid productId, int quantity)
     {
-        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
-        var result = await _mediator.Send(new UpdateBasketItemQuantityCommand(buyerId, productId, quantity));
+        try
+        {
+            var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+            var result = await _mediator.Send(new UpdateBasketItemQuantityCommand(buyerId, productId, quantity));
 
-        if (result.IsSuccess)
-        {
-            _items = MapToCartItems(result.Value);
-            Changed?.Invoke();
+            if (result.IsSuccess)
+            {
+                _items = MapToCartItems(result.Value);
+                Changed?.Invoke();
+            }
+            else
+            {
+                _logger.LogWarning("Could not update quantity for product {ProductId} to {Quantity}: {Error}", productId, quantity, result.Error);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("Could not update quantity for product {ProductId} to {Quantity}: {Error}", productId, quantity, result.Error);
+            _logger.LogWarning(ex, "Could not update quantity for product {ProductId} (unexpected error).", productId);
         }
     }
 
@@ -125,17 +150,24 @@ public class CartService
     /// </summary>
     public async Task RemoveAsync(Guid productId)
     {
-        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
-        var result = await _mediator.Send(new RemoveFromBasketCommand(buyerId, productId));
+        try
+        {
+            var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+            var result = await _mediator.Send(new RemoveFromBasketCommand(buyerId, productId));
 
-        if (result.IsSuccess)
-        {
-            _items = MapToCartItems(result.Value);
-            Changed?.Invoke();
+            if (result.IsSuccess)
+            {
+                _items = MapToCartItems(result.Value);
+                Changed?.Invoke();
+            }
+            else
+            {
+                _logger.LogWarning("Could not remove product {ProductId} from basket: {Error}", productId, result.Error);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("Could not remove product {ProductId} from basket: {Error}", productId, result.Error);
+            _logger.LogWarning(ex, "Could not remove product {ProductId} from basket (unexpected error).", productId);
         }
     }
 
@@ -144,10 +176,17 @@ public class CartService
     /// </summary>
     public async Task ClearAsync()
     {
-        var buyerId = await _buyerIdProvider.GetOrCreateAsync();
-        await _mediator.Send(new ClearBasketCommand(buyerId));
-        _items = [];
-        Changed?.Invoke();
+        try
+        {
+            var buyerId = await _buyerIdProvider.GetOrCreateAsync();
+            await _mediator.Send(new ClearBasketCommand(buyerId));
+            _items = [];
+            Changed?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not clear basket (unexpected error).");
+        }
     }
 
     /// <summary>

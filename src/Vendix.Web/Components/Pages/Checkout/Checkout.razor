@@ -60,10 +60,23 @@ else
                                 <dt class="text-gray-600">Subtotal (@CartService.ItemCount @(CartService.ItemCount == 1 ? "item" : "items"))</dt>
                                 <dd class="font-medium text-gray-900"><PriceDisplay Price="@CartService.Subtotal" Currency="@(CartService.Currency ?? "USD")" /></dd>
                             </div>
+                            <div class="flex justify-between">
+                                <dt class="text-gray-600">Shipping</dt>
+                                <dd class="font-medium text-gray-900">
+                                    @if (CartService.ShippingCost == 0)
+                                    {
+                                        <span class="text-green-600">Free</span>
+                                    }
+                                    else
+                                    {
+                                        <PriceDisplay Price="@CartService.ShippingCost" Currency="@(CartService.Currency ?? "USD")" />
+                                    }
+                                </dd>
+                            </div>
                             <div class="border-t pt-3 flex justify-between items-center">
                                 <dt class="text-base font-bold text-gray-900">Total</dt>
                                 <dd class="text-xl font-bold text-primary-600">
-                                    <PriceDisplay Price="@CartService.Subtotal" Currency="@(CartService.Currency ?? "USD")" />
+                                    <PriceDisplay Price="@(CartService.Subtotal + CartService.ShippingCost)" Currency="@(CartService.Currency ?? "USD")" />
                                 </dd>
                             </div>
                         </dl>
@@ -101,7 +114,7 @@ else
         try
         {
             var buyerId = await CartService.GetBuyerIdAsync();
-            var result = await Mediator.Send(new PlaceOrderCommand(buyerId, _model.Email, _model.ShippingAddress));
+            var result = await Mediator.Send(new PlaceOrderCommand(buyerId, _model.Email, _model.ShippingAddress, CartService.ShippingCost));
 
             if (result.IsSuccess)
             {
@@ -112,6 +125,10 @@ else
             {
                 ToastService.ShowError(result.Error ?? "Could not place order.");
             }
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Something went wrong placing your order. Please try again.");
         }
         finally
         {
