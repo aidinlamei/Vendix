@@ -75,7 +75,7 @@
 
     private async Task AddToCart()
     {
-        await CartService.AddAsync(new CartItem
+        var added = await CartService.AddAsync(new CartItem
         {
             ProductId = Product.Id,
             Slug = Product.Slug,
@@ -87,6 +87,13 @@
             Quantity = 1
         });
 
-        ToastService.ShowSuccess($"\"{Product.Title}\" added to cart.");
+        if (added)
+        {
+            ToastService.ShowSuccess($"\"{Product.Title}\" added to cart.");
+        }
+        else
+        {
+            ToastService.ShowError("Could not add this product to your cart.");
+        }
     }
 }

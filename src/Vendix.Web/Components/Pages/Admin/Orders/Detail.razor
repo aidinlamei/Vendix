@@ -1,0 +1,142 @@
+@page "/admin/orders/{Id:guid}"
+@layout AdminLayout
+
+<PageTitle>Order Details - Vendix Admin</PageTitle>
+
+@inject IMediator Mediator
+@inject ToastService ToastService
+
+<div class="p-6 max-w-4xl">
+    @if (_isLoading)
+    {
+        <LoadingSpinner Size="large" />
+    }
+    else if (_order is null)
+    {
+        <div class="bg-white rounded-lg shadow-sm p-12 text-center text-gray-500">Order not found.</div>
+    }
+    else
+    {
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Order @_order.OrderNumber</h1>
+            <a href="/admin/orders" class="text-primary-600 hover:text-primary-700 font-medium">Back to Orders</a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="font-bold text-gray-900 mb-3">Buyer</h2>
+            <p class="text-sm text-gray-700">Email: @_order.BuyerEmail</p>
+            <p class="text-sm text-gray-700">Shipping Address: @_order.ShippingAddress</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="font-bold text-gray-900 mb-3">Items</h2>
+            <div class="space-y-2">
+                @foreach (var item in _order.Items)
+                {
+                    <div class="flex justify-between text-sm">
+                        <span>@item.ProductName (@item.Sku) x @item.Quantity</span>
+                        <span class="font-medium"><PriceDisplay Price="@item.LineTotal" Currency="@_order.Currency" /></span>
+                    </div>
+                }
+            </div>
+            <div class="border-t mt-4 pt-4 flex justify-between font-bold">
+                <span>Total</span>
+                <span class="text-primary-600"><PriceDisplay Price="@_order.Total" Currency="@_order.Currency" /></span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6 flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-700">Status:</label>
+            <select @bind="_selectedStatus" class="rounded-lg border-gray-300 text-sm">
+                @foreach (var status in Enum.GetValues<Vendix.Domain.Ordering.Enums.OrderStatus>().Where(s => s != Vendix.Domain.Ordering.Enums.OrderStatus.Cancelled))
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+            <button @onclick="UpdateStatus" class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition">
+                Update Status
+            </button>
+            @if (_order.Status != nameof(Vendix.Domain.Ordering.Enums.OrderStatus.Cancelled))
+            {
+                <button @onclick="() => _confirmCancelVisible = true" class="text-red-600 hover:text-red-700 text-sm font-medium ml-auto">
+                    Cancel Order
+                </button>
+            }
+        </div>
+    }
+</div>
+
+<ConfirmDialog IsVisible="@_confirmCancelVisible"
+               IsVisibleChanged="@((bool value) => _confirmCancelVisible = value)"
+               Title="Cancel Order"
+               Message="Are you sure you want to cancel this order?"
+               Type="danger"
+               ConfirmText="Cancel Order"
+               OnConfirm="CancelOrder" />
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private Vendix.Application.Ordering.DTOs.OrderDto? _order;
+    private bool _isLoading = true;
+    private bool _confirmCancelVisible;
+    private Vendix.Domain.Ordering.Enums.OrderStatus _selectedStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await Mediator.Send(new Vendix.Application.Ordering.Queries.GetOrderByIdQuery(Id));
+            _order = result.IsSuccess ? result.Value : null;
+        }
+        catch
+        {
+            // Order not found - handled in UI
+            _order = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+        if (_order is not null)
+        {
+            _selectedStatus = Enum.Parse<Vendix.Domain.Ordering.Enums.OrderStatus>(_order.Status);
+        }
+    }
+
+    private async Task UpdateStatus()
+    {
+        var result = await Mediator.Send(new Vendix.Application.Ordering.Commands.UpdateOrderStatusCommand(Id, _selectedStatus));
+        if (result.IsSuccess)
+        {
+            ToastService.ShowInfo("Order status updated.");
+            await LoadAsync();
+        }
+        else
+        {
+            ToastService.ShowError(result.Error ?? "Could not update status.");
+        }
+    }
+
+    private async Task CancelOrder()
+    {
+        var result = await Mediator.Send(new Vendix.Application.Ordering.Commands.CancelOrderCommand(Id));
+        if (result.IsSuccess)
+        {
+            ToastService.ShowInfo("Order cancelled.");
+            await LoadAsync();
+        }
+        else
+        {
+            ToastService.ShowError(result.Error ?? "Could not cancel order.");
+        }
+    }
+}

@@ -2,7 +2,7 @@
 
 > **Version:** 2.2.0
 > **Last Updated:** 2026-01-04
-> **Status:** Phase 2 - Core Catalog (12/12 tasks complete) ✅
+> **Status:** Phase 3 - Shopping Flow (Basket + Checkout + Order complete; Basket/Order admin cancel+status update done)
 > **.NET Version:** 10.0 LTS (Supported until November 2028)
 
 ---
@@ -460,9 +460,9 @@ public class ProductsController : ControllerBase { }
 - [x] Public catalog pages (Tasks 9-11)
 
 ### Phase 3: Shopping Flow
-- [ ] Basket
-- [ ] Checkout
-- [ ] Orders
+- [x] Basket
+- [x] Checkout
+- [x] Orders
 
 ### Phase 4: Payment
 - [ ] Gateway abstraction

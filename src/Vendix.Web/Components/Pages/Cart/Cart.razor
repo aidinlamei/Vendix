@@ -9,6 +9,7 @@
 @implements IDisposable
 
 @inject CartService CartService
+@inject NavigationManager Navigation
 @inject ToastService ToastService
 
 @if (_isLoading)
@@ -133,17 +134,17 @@ else
                             <div class="flex justify-between">
                                 <dt class="text-gray-600">Shipping</dt>
                                 <dd class="font-medium text-gray-900">
-                                    @if (Shipping == 0)
+                                    @if (CartService.ShippingCost == 0)
                                     {
                                         <span class="text-green-600">Free</span>
                                     }
                                     else
                                     {
-                                        <PriceDisplay Price="@Shipping" Currency="@Currency" />
+                                        <PriceDisplay Price="@CartService.ShippingCost" Currency="@Currency" />
                                     }
                                 </dd>
                             </div>
-                            @if (Shipping > 0)
+                            @if (CartService.ShippingCost > 0)
                             {
                                 <p class="text-xs text-gray-500">
                                     Free shipping on orders over $50
@@ -181,12 +182,7 @@ else
     private bool _isLoading = true;
     private bool _confirmClearVisible;
 
-    private const decimal FreeShippingThreshold = 50m;
-    private const decimal StandardShipping = 4.99m;
-
-    private decimal Shipping => CartService.Subtotal >= FreeShippingThreshold || CartService.Subtotal == 0 ? 0 : StandardShipping;
-
-    private decimal Total => CartService.Subtotal + Shipping;
+    private decimal Total => CartService.Subtotal + CartService.ShippingCost;
 
     private string Currency => CartService.Currency ?? "USD";
 
@@ -235,10 +231,9 @@ else
         ToastService.ShowInfo("Your cart has been cleared.");
     }
 
-    private async Task Checkout()
+    private void Checkout()
     {
-        await Task.CompletedTask;
-        ToastService.ShowInfo("Checkout is coming soon.", "Coming Soon");
+        Navigation.NavigateTo("/checkout");
     }
 
     public void Dispose()
